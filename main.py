@@ -1,8 +1,15 @@
+#!/usr/bin/python3
+__author__ = "u/wontfixit"
+__copyright__ = "Copyright 2020"
+__license__ = "GPL"
+__version__ = "1.0.0"
+
 import praw
 from datetime import datetime
 import configparser
 import logging as log
 from DBhelper import *
+from main_messages import *
 
 now = datetime.now()
 timestamp = datetime.timestamp(now)
@@ -25,12 +32,6 @@ if ___debug___ == True:
 class MO:
 	
 	def __init__(self):
-		# config = configparser.ConfigParser()
-		# config.read('/home/pi/crosspostbot/config.ini')
-		
-		# _reddituser = config['DEFAULT']['_reddituser']
-		# _subtocrosspost = config['DEFAULT']['_subtocrosspost']
-		# _triggerwords =config['DEFAULT']['_triggerwords']
 		self.subredditname = 'mysteryobject'
 		_UA = 'MOB by /u/[yourouija]'
 		reddit = praw.Reddit("bot1",user_agent=_UA)
@@ -60,11 +61,12 @@ class MO:
 				
 		#LockThread
 		submission.mod.lock()
-	
-		#comment winner comment
-		#send message to creator that puzzle has solved
+		#comment winner comment, done in main_messages.py
 		None
 	
+	def startGameGateway(rid):
+		self.startGame(rid)
+		None
 	
 	def startGame(self,rid):
 		submission = self.r.submission(id=rid)
@@ -72,8 +74,7 @@ class MO:
 		submission.flair.select(self.flair_running)
 		#unLockThread
 		submission.mod.unlock()
-		#send message to creator that puzzle has started?
-		
+		#send message to creator that puzzle has started? Nope
 		None
 	
 	def check24h(self,id):
@@ -90,12 +91,13 @@ class MO:
 		for s in ss:
 			solution = str(s[0])
 		
-			if solution in comment.body:
+			
+			if comment.body  in solution:
 				
 				self.madeWinnerComment(comment,parent_ID)
 				self.closeGame(parent_ID,1)
 				self.getDatabase(db.updateStatus(parent_ID,1))
-				self.getDatabase(db.addWinner(comment.author.name,comment.submission.url,comment.submission.title))
+				self.getDatabase(db.addWinner(comment.author.name,comment.submission.permalink,comment.submission.title))
 				self.updateUserFlair(comment.author.name)
 				
 				return "Solution found: "+solution
@@ -114,25 +116,21 @@ class MO:
 	def madeWinnerComment(self,comment,parent_ID):
 		#reply that user have won
 		comment.reply("you win this round")
+		user = comment.author.name
 		#made mod submission with winner
 		submission = self.r.submission(id=parent_ID)
-		modcommentid = submission.reply("IAM THE LAW - Add here who has won the round")
+		modcommentid = submission.reply("IAM THE LAW - User r/"+user+" has won the round")
 		#made mod comment sticky 
 		comment = self.r.comment(modcommentid)
 		comment.mod.distinguish(how="yes", sticky=True)		
 		None
 		
 	def getMessages(self):
-		#Read Messages 
-		#safe Title in DB
-		#anser if not readable
+		#done in main_messages.py
 		None
-	
 	def sendMessageNoSolution(self):
-		#i cant read your solution, seems there is some issue with formating
-		#try again
+		#done in main_messages.py
 		None
-		
 	def sendMessageSuccesfullSolved(self):
 		#Your puzzle ID has solved by 
 		#wontdothis
@@ -149,8 +147,6 @@ class MO:
 		None
 		
 	def streamAll(self):
-		#reddit = self.connectReddit()
-		
 		comment_stream = self.r.subreddit(self.subredditname).stream.comments(pause_after=-1)
 		submission_stream = self.r.subreddit(self.subredditname).stream.submissions(pause_after=-1)
 		while True:
@@ -166,26 +162,20 @@ class MO:
 					if submission is None:
 						break
 					#print(submission.title)
-					self.getDatabase(db.addNewGame(submission))
-			
+					self.getDatabase(db.addNewGame(submission))			
 
 			except Exception as err:
 				print(str(err))
 		
-		
-		
-		
 	
-			
-			
-			
-a = MO()
-db= DBhelper()
-a.getDatabase(db)
+if __name__ == "__main__":			
+	a = MO()
+	db= DBhelper()
+	a.getDatabase(db)
 
-#a.startGame("hveod8")	
-#a.closeGame("hveod8",2)		
-a.streamAll()
+	#a.startGame("hveod8")	
+	#a.closeGame("hveod8",2)		
+	a.streamAll()
 	
 
 

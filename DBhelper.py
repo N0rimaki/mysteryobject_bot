@@ -14,28 +14,20 @@ timestamp = datetime.timestamp(now)
 time_pretty = str(datetime.now().strftime('%Y-%m-%d_%H.%M.%S'))
 	
 def logdb(log_message,created_by,table="logtable",log_levelname="debug"):
-	#database = sqlite3.connect('./logDB.db')
 	database = sqlite3.connect('logDB.db')
-	
-	
 	c = database.cursor()
 	created_at = str(datetime.now().strftime('%Y-%m-%d_%H:%M:%S'))
-
 	try:
-		
+
 		c.execute('''INSERT INTO '''+table+''' (log_levelname,log_message,created_at,created_by)VALUES(?,?,?,?)''', (log_levelname,log_message,created_at,created_by))
-		
-		#sqlstring = "INSERT INTO {0} (log_message,created_at,created_by) VALUES('{1}','{2}',{3}')".format(table,log_message,created_at,created_by)
-				
-		#c.execute(sqlstring)			  
-		
 		database.commit()
 		return True
 	except:
 		return False
 	finally:
-		c.close()
-
+		#c.close()
+		None
+		
 class DBhelper:
 	def __init__(self):
 		self.database = sqlite3.connect('MOB.sqlite')
@@ -53,11 +45,11 @@ class DBhelper:
 
 	
 	def CreateTables(database,c):
-		c.execute('''CCREATE TABLE "Games" (
+		c.execute('''CREATE TABLE "Games" (
 	"ID"	INTEGER PRIMARY KEY AUTOINCREMENT,
 	"rID"	TEXT UNIQUE,
 	"title"	TEXT,
-	"url"	TEXT,
+	"permalink"	TEXT,
 	"status"	INTEGER,
 	"solution"	TEXT,
 	"author"	TEXT,
@@ -68,9 +60,10 @@ class DBhelper:
 		
 		k='''CREATE TABLE "statistics" (
 	"ID"	INTEGER PRIMARY KEY AUTOINCREMENT,
-	"username"	TEXT,
-	"created_at"	TEXT,
-	"url"	INTEGER
+	"authorname"	TEXT,
+	"permalink"	TEXT,
+	"title"	TEXT,
+	"created_at"	TEXT
 );'''
 	
 	
@@ -78,9 +71,10 @@ class DBhelper:
 		
 		logdb("in Methode","addNewGame")
 		status = '0' #=locked
+		perm = "https://www.reddit.com"+submission.permalink
 		try:
-			self.c.execute('''INSERT OR IGNORE INTO Games(rID,title,url,status,author,created_at)
-						  VALUES(?,?,?,?,?,?)''', (submission.id,submission.title,submission.url,status,submission.author.name,self.created_at))
+			self.c.execute('''INSERT OR IGNORE INTO Games(rID,title,permalink,status,author,created_at)
+						  VALUES(?,?,?,?,?,?)''', (submission.id,submission.title,perm,status,submission.author.name,self.created_at))
 			self.database.commit()
 			sqlquery = self.database.set_trace_callback(print)
 			logdb(sqlquery,"addNewGame","info")
@@ -101,14 +95,13 @@ class DBhelper:
 			#self.c.close()
 		
 		
-	def addWinner(self,authorname,url,title):
+	def addWinner(self,authorname,permalink,title):
 		logdb("in Methode","addWinner","info")
 
-		self.c.execute('''INSERT INTO statistics (authorname,url,title,created_at)
-					  VALUES(?,?,?,?)''', (authorname,url,title,self.created_at))
+		self.c.execute('''INSERT INTO statistics (authorname,permalink,title,created_at)
+					  VALUES(?,?,?,?)''', (authorname,permalink,title,self.created_at))
 		self.database.commit()
-		
-
+	
 	
 	def updateStatus(self,rID,status):
 	
@@ -116,13 +109,13 @@ class DBhelper:
 		self.database.commit()
 		logdb("submission "+rID+" locked","updateStatus","info")
 		
-		
-			
+	
 	def getSolutionforID(self,rid):
 		self.c.execute("Select solution from Games where rID = ? and status = 0",(rid,))
 		self.database.commit()
 		result = self.c.fetchall()
 		return result
+	
 	
 	def getSolvedbyUser(self,authorname):
 		self.c.execute("Select count() as counter from statistics where authorname = ?",(authorname,))
@@ -130,7 +123,11 @@ class DBhelper:
 		result = self.c.fetchall()
 		return result
 
-		
+	def updateSolution(self,permalink,solution):
+		logdb("in Methode","updateSolution","info")
+
+		self.c.execute("UPDATE Games SET solution = ? WHERE rID = ?",(solution,permalink))
+		self.database.commit()	
 			
 			
 			
