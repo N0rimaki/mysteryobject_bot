@@ -95,9 +95,21 @@ class MO:
 				self.madeWinnerComment(comment,parent_ID)
 				self.closeGame(parent_ID,1)
 				self.getDatabase(db.updateStatus(parent_ID,1))
-				return solution+" FUCKING SUCCESS"
-			
-
+				self.getDatabase(db.addWinner(comment.author.name,comment.submission.url,comment.submission.title))
+				self.updateUserFlair(comment.author.name)
+				
+				return "Solution found: "+solution
+	
+	
+	def updateUserFlair(self,authorname):
+		#count how many puzzles the person solved
+			#update the flair Solved:xx
+		result = self.getDatabase(db.getSolvedbyUser(authorname))
+		for r in result:
+			flairtext="solved:"+str(r[0])
+		
+		self.r.subreddit(self.subredditname).flair.set(authorname, flairtext)
+		None
 	
 	def madeWinnerComment(self,comment,parent_ID):
 		#reply that user have won
@@ -116,13 +128,14 @@ class MO:
 		#anser if not readable
 		None
 	
-	def sendMessageNoSolutio(self):
+	def sendMessageNoSolution(self):
 		#i cant read your solution, seems there is some issue with formating
 		#try again
 		None
 		
 	def sendMessageSuccesfullSolved(self):
 		#Your puzzle ID has solved by 
+		#wontdothis
 		None
 		
 	
@@ -148,16 +161,14 @@ class MO:
 					#print(comment.author.name)
 					#print(comment.body)
 					k = self.processComment(comment)
-					print(k)
+					
 				for submission in submission_stream:
 					if submission is None:
 						break
-					print(submission.title)
+					#print(submission.title)
 					self.getDatabase(db.addNewGame(submission))
 			
-			
-			
-			
+
 			except Exception as err:
 				print(str(err))
 		
@@ -174,7 +185,7 @@ a.getDatabase(db)
 
 #a.startGame("hveod8")	
 #a.closeGame("hveod8",2)		
-a.streamAll()	
+a.streamAll()
 	
 
 

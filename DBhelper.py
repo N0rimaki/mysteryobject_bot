@@ -6,20 +6,12 @@ __version__ = "1.0.0"
 
 
 import sqlite3
-import logging as dblog
+
 from datetime import datetime
 
 now = datetime.now()
 timestamp = datetime.timestamp(now)
 time_pretty = str(datetime.now().strftime('%Y-%m-%d_%H.%M.%S'))
-
-LOG_FILENAME_DB = "log_DB.txt"
-
-___debugDB___ = False
-
-if ___debugDB___ == True:
-	dblog.basicConfig(filename=LOG_FILENAME_DB,level=dblog.INFO,format='%(message)s')
-	
 	
 def logdb(log_message,created_by,table="logtable",log_levelname="debug"):
 	#database = sqlite3.connect('./logDB.db')
@@ -49,6 +41,7 @@ class DBhelper:
 		self.database = sqlite3.connect('MOB.sqlite')
 		#database = sqlite3.connect('./panminder.db')
 		self.c = self.database.cursor()
+		self.created_at = str(datetime.now().strftime('%Y-%m-%d_%H:%M:%S'))
 		return None
 	
 	def connectDB(self):
@@ -60,9 +53,10 @@ class DBhelper:
 
 	
 	def CreateTables(database,c):
-		c.execute('''CREATE TABLE "Games" (
+		c.execute('''CCREATE TABLE "Games" (
 	"ID"	INTEGER PRIMARY KEY AUTOINCREMENT,
 	"rID"	TEXT UNIQUE,
+	"title"	TEXT,
 	"url"	TEXT,
 	"status"	INTEGER,
 	"solution"	TEXT,
@@ -71,16 +65,22 @@ class DBhelper:
 );''')
 		database.commit()
 		c.close()
+		
+		k='''CREATE TABLE "statistics" (
+	"ID"	INTEGER PRIMARY KEY AUTOINCREMENT,
+	"username"	TEXT,
+	"created_at"	TEXT,
+	"url"	INTEGER
+);'''
 	
 	
 	def addNewGame(self,submission):
 		
 		logdb("in Methode","addNewGame")
 		status = '0' #=locked
-		created_at = str(datetime.now().strftime('%Y-%m-%d_%H:%M:%S'))
 		try:
-			self.c.execute('''INSERT OR IGNORE INTO Games(rID,url,status,author,created_at)
-						  VALUES(?,?,?,?,?)''', (submission.id,submission.url,status,submission.author.name,created_at))
+			self.c.execute('''INSERT OR IGNORE INTO Games(rID,title,url,status,author,created_at)
+						  VALUES(?,?,?,?,?,?)''', (submission.id,submission.title,submission.url,status,submission.author.name,self.created_at))
 			self.database.commit()
 			sqlquery = self.database.set_trace_callback(print)
 			logdb(sqlquery,"addNewGame","info")
@@ -99,8 +99,17 @@ class DBhelper:
 		finally:
 			logdb("finally","addNewGame")
 			#self.c.close()
-			
-			
+		
+		
+	def addWinner(self,authorname,url,title):
+		logdb("in Methode","addWinner","info")
+
+		self.c.execute('''INSERT INTO statistics (authorname,url,title,created_at)
+					  VALUES(?,?,?,?)''', (authorname,url,title,self.created_at))
+		self.database.commit()
+		
+
+	
 	def updateStatus(self,rID,status):
 	
 		self.c.execute("UPDATE Games SET status = ? WHERE rID = ?",(status,rID))
@@ -111,6 +120,12 @@ class DBhelper:
 			
 	def getSolutionforID(self,rid):
 		self.c.execute("Select solution from Games where rID = ? and status = 0",(rid,))
+		self.database.commit()
+		result = self.c.fetchall()
+		return result
+	
+	def getSolvedbyUser(self,authorname):
+		self.c.execute("Select count() as counter from statistics where authorname = ?",(authorname,))
 		self.database.commit()
 		result = self.c.fetchall()
 		return result
