@@ -5,6 +5,7 @@ __license__ = "GPL"
 __version__ = "1.0.0"
 
 import praw
+import os
 from datetime import datetime
 import configparser
 import logging as log
@@ -16,16 +17,17 @@ timestamp = datetime.timestamp(now)
 timeMinusOneDay = timestamp-(24*60*60)
 
 
-
 #LOG_FILENAME = "/home/pi/mysteryobject_bot/log_MObot.txt"
-LOG_FILENAME = "./log_MObot.log"
+LOG_FILENAME = "./log_Main.log"
 
 
 ___debug___ = True
 ___runprod___= False
 
 if ___debug___ == True:
-	log.basicConfig(filename=LOG_FILENAME,level=log.INFO,format='%(message)s')
+		log.basicConfig( handlers=[
+            log.FileHandler(LOG_FILENAME),
+            log.StreamHandler()],level=log.INFO,format='%(asctime)s : %(levelname)s : %(message)s')
 
 
 
@@ -34,14 +36,20 @@ class MO:
 	def __init__(self):
 		self.subredditname = 'mysteryobject'
 		_UA = 'MOB by /u/[yourouija]'
-		reddit = praw.Reddit("bot1",user_agent=_UA)
-		reddit.validate_on_submit=True	
-		self.r = reddit
-		
+		try:
+			reddit = praw.Reddit("bot1",user_agent=_UA)
+			reddit.validate_on_submit=True	
+			self.r = reddit
+		except Exception as err:
+			log.error("__init__() ",str(err))
+			self.rebootClass(err)
+			
+			
 		self.flair_solved = "882c5aa6-c926-11ea-a888-0e38155ddc41"
 		self.flair_running = "7ae507b2-c926-11ea-8bf8-0ef44622e4b7"
 		self.flair_onhold = "4aecca10-c99c-11ea-bc5c-0e190f721893"
 		
+		log.info("init Main Bot Class")	
 		None
 	
 	
@@ -62,19 +70,23 @@ class MO:
 		#LockThread
 		submission.mod.lock()
 		#comment winner comment, done in main_messages.py
+		log.info("Game closed %s %s %s",submission.author.name,submission.id, submission.title)	
+
 		None
 	
 	def startGameGateway(rid):
 		self.startGame(rid)
 		None
 	
-	def startGame(self,rid):
+	def startGame(self,rid,solution=None):
 		submission = self.r.submission(id=rid)
 		#setFlair
 		submission.flair.select(self.flair_running)
 		#unLockThread
 		submission.mod.unlock()
 		#send message to creator that puzzle has started? Nope
+		log.info("Game started %s %s %s %s",submission.author.name,submission.id,submission.title,str(solution))	
+
 		None
 	
 	def check24h(self,id):
@@ -100,7 +112,8 @@ class MO:
 				self.getDatabase(db.addWinner(comment.author.name,comment.submission.permalink,comment.submission.title))
 				self.updateUserFlair(comment.author.name)
 				
-				return "Solution found: "+solution
+				log.info("Solution found: %s %s %s",parent_ID,comment.submission.title,comment.body)	
+			
 	
 	
 	def updateUserFlair(self,authorname):
@@ -111,6 +124,8 @@ class MO:
 			flairtext="solved:"+str(r[0])
 		
 		self.r.subreddit(self.subredditname).flair.set(authorname, flairtext)
+		log.info("Userflair changed %s %s",authorname,flairtext)	
+
 		None
 	
 	def madeWinnerComment(self,comment,parent_ID):
@@ -123,6 +138,7 @@ class MO:
 		#made mod comment sticky 
 		comment = self.r.comment(modcommentid)
 		comment.mod.distinguish(how="yes", sticky=True)		
+		log.info("Made Mod Comment")	
 		None
 		
 	def getMessages(self):
@@ -156,17 +172,26 @@ class MO:
 						break
 					#print(comment.author.name)
 					#print(comment.body)
-					k = self.processComment(comment)
+					self.processComment(comment)
 					
 				for submission in submission_stream:
 					if submission is None:
 						break
+					elif submission.link_flair_text == 'on hold':	
 					#print(submission.title)
-					self.getDatabase(db.addNewGame(submission))			
+						self.getDatabase(db.addNewGame(submission))	
+						log.info("new Game detected: %s, %s, %s",submission.author.name,submission.title, submission.link_flair_text)
 
 			except Exception as err:
-				print(str(err))
-		
+				log.error("streamall() ",str(err))
+				self.rebootClass(err)
+	
+	
+	def rebootClass(self,err):
+		log.error("FATAL, restart class %s",str(err))	
+		os.system("python main.py")	
+	
+	
 	
 if __name__ == "__main__":			
 	a = MO()

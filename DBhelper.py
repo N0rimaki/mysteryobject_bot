@@ -30,20 +30,13 @@ def logdb(log_message,created_by,table="logtable",log_levelname="debug"):
 		
 class DBhelper:
 	def __init__(self):
+		#self.database = sqlite3.connect('/home/pi/mysteryobject_bot/MOB.sqlite')
 		self.database = sqlite3.connect('MOB.sqlite')
-		#database = sqlite3.connect('./panminder.db')
 		self.c = self.database.cursor()
 		self.created_at = str(datetime.now().strftime('%Y-%m-%d_%H:%M:%S'))
 		return None
-	
-	def connectDB(self):
-		database = sqlite3.connect('MOB.sqlite')
-		#database = sqlite3.connect('./panminder.db')
-		c = database.cursor()
-		return database,c
 
 
-	
 	def CreateTables(database,c):
 		c.execute('''CREATE TABLE "Games" (
 	"ID"	INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -69,34 +62,34 @@ class DBhelper:
 	
 	def addNewGame(self,submission):
 		
-		logdb("in Methode","addNewGame")
+		#logdb("in Methode","addNewGame")
 		status = '0' #=locked
 		perm = "https://www.reddit.com"+submission.permalink
 		try:
 			self.c.execute('''INSERT OR IGNORE INTO Games(rID,title,permalink,status,author,created_at)
 						  VALUES(?,?,?,?,?,?)''', (submission.id,submission.title,perm,status,submission.author.name,self.created_at))
 			self.database.commit()
-			sqlquery = self.database.set_trace_callback(print)
-			logdb(sqlquery,"addNewGame","info")
+			sqlquery = self.database.set_trace_callback(None)
+			#logdb(sqlquery,"addNewGame","info")
 			if sqlquery == True:
 				
-				logdb("insertPost SUCCESS","addNewGame")
+				#logdb("insertPost SUCCESS","addNewGame")
 				return True
 			else:
 				
-				logdb("insertPost FAIL","addNewGame")
+				#logdb("insertPost FAIL","addNewGame")
 				return False
 		except Exception as err:
 			
-			logdb("Error: "+str(err),"addNewGame","Error")
+			#logdb("Error: "+str(err),"addNewGame","Error")
 			return False
 		finally:
-			logdb("finally","addNewGame")
+			None#logdb("finally","addNewGame")
 			#self.c.close()
 		
 		
 	def addWinner(self,authorname,permalink,title):
-		logdb("in Methode","addWinner","info")
+		#logdb("in Methode","addWinner","info")
 
 		self.c.execute('''INSERT INTO statistics (authorname,permalink,title,created_at)
 					  VALUES(?,?,?,?)''', (authorname,permalink,title,self.created_at))
@@ -107,7 +100,7 @@ class DBhelper:
 	
 		self.c.execute("UPDATE Games SET status = ? WHERE rID = ?",(status,rID))
 		self.database.commit()
-		logdb("submission "+rID+" locked","updateStatus","info")
+		#logdb("submission "+rID+" locked","updateStatus","info")
 		
 	
 	def getSolutionforID(self,rid):
