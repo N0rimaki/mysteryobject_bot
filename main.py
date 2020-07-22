@@ -2,6 +2,7 @@ import praw
 from datetime import datetime
 import configparser
 import logging as log
+from DBhelper import *
 
 now = datetime.now()
 timestamp = datetime.timestamp(now)
@@ -30,80 +31,150 @@ class MO:
 		# _reddituser = config['DEFAULT']['_reddituser']
 		# _subtocrosspost = config['DEFAULT']['_subtocrosspost']
 		# _triggerwords =config['DEFAULT']['_triggerwords']
-		None
-	
-	def connectReddit(self):
+		self.subredditname = 'mysteryobject'
 		_UA = 'MOB by /u/[yourouija]'
 		reddit = praw.Reddit("bot1",user_agent=_UA)
 		reddit.validate_on_submit=True	
+		self.r = reddit
 		
-		return reddit
+		self.flair_solved = "882c5aa6-c926-11ea-a888-0e38155ddc41"
+		self.flair_running = "7ae507b2-c926-11ea-8bf8-0ef44622e4b7"
+		self.flair_onhold = "4aecca10-c99c-11ea-bc5c-0e190f721893"
+		
+		None
 	
-	def closeGame():
+	
+	def getDatabase(self,db):
+		self.db=db
+		return db
+		
+		
+		
+	def closeGame(self,rid,reason):
+		submission = self.r.submission(id=rid)
 		#setFlair
-		#lockThread
+		if reason == 1:
+			submission.flair.select(self.flair_solved)
+		elif reason == 2:
+			submission.flair.select(self.flair_onhold)
+				
+		#LockThread
+		submission.mod.lock()
+	
 		#comment winner comment
 		#send message to creator that puzzle has solved
 		None
 	
 	
-	def startGame():
+	def startGame(self,rid):
+		submission = self.r.submission(id=rid)
 		#setFlair
+		submission.flair.select(self.flair_running)
 		#unLockThread
-		#send message to creator that puzzle has started
+		submission.mod.unlock()
+		#send message to creator that puzzle has started?
+		
 		None
 	
-	
-	
-	def streamPosts(self):
-		reddit = self.connectReddit()
-		for submission in reddit.subreddit('MysteryObject').stream.submissions():
-			print(submission.selftext)
-			print(submission.id)
-			print(submission.author.name)
-			print(submission.url)
-			print(submission.title)
-			print(submission.locked)
+	def check24h(self,id):
+		#when no reply after 24h delte the submission
+		#set flair locked
+		#remove submission
+		None
+
+	def processComment(self,comment):
+		#Here we analyze the comment and compare user comment with databasesolution
+		parent_ID = comment.parent_id.replace('t3_','')
+		
+		ss = self.getDatabase(db.getSolutionforID(parent_ID))
+		for s in ss:
+			solution = str(s[0])
+		
+			if solution in comment.body:
+				
+				self.madeWinnerComment(comment,parent_ID)
+				self.closeGame(parent_ID,1)
+				self.getDatabase(db.updateStatus(parent_ID,1))
+				return solution+" FUCKING SUCCESS"
 			
+
+	
+	def madeWinnerComment(self,comment,parent_ID):
+		#reply that user have won
+		comment.reply("you win this round")
+		#made mod submission with winner
+		submission = self.r.submission(id=parent_ID)
+		modcommentid = submission.reply("IAM THE LAW - Add here who has won the round")
+		#made mod comment sticky 
+		comment = self.r.comment(modcommentid)
+		comment.mod.distinguish(how="yes", sticky=True)		
+		None
+		
+	def getMessages(self):
+		#Read Messages 
+		#safe Title in DB
+		#anser if not readable
+		None
+	
+	def sendMessageNoSolutio(self):
+		#i cant read your solution, seems there is some issue with formating
+		#try again
+		None
+		
+	def sendMessageSuccesfullSolved(self):
+		#Your puzzle ID has solved by 
+		None
+		
+	
 	def sendAuthorWelcomeMessage(self):
 		#Done by Automoderator
 		None
 		
+	def hint(self):
+		#upvote this comment to get a hint
+		#10 updoots post first and last letter X......xrange
+		None
 		
+	def streamAll(self):
+		#reddit = self.connectReddit()
 		
-		
-		
-		
-		
-		
-		
-		
-	def StreamRedditStuff(i,redditID,subreddit,_igu):
-		reddit = ConnectReddit()
-		for comment in reddit.subreddit(subreddit).stream.comments():
-		#for comment in reddit.subreddit('TheGamerLounge').stream.comments():
-
-			if comment.parent_id == "t3_"+redditID:
-
-				dt_object = datetime.fromtimestamp(comment.created_utc)
+		comment_stream = self.r.subreddit(self.subredditname).stream.comments(pause_after=-1)
+		submission_stream = self.r.subreddit(self.subredditname).stream.submissions(pause_after=-1)
+		while True:
+			try:
+				for comment in comment_stream:
+					if comment is None:
+						break
+					#print(comment.author.name)
+					#print(comment.body)
+					k = self.processComment(comment)
+					print(k)
+				for submission in submission_stream:
+					if submission is None:
+						break
+					print(submission.title)
+					self.getDatabase(db.addNewGame(submission))
 			
-				#print("Comment found:\r\nUser: %s \r\nCreated:%s \r\nBody: %s \r\n"%(comment.author.name,dt_object,comment.body))
-				
-				if comment.author.name not in _igu:
-					insertTrigger(*connectDB(),comment.id,comment.created_utc,comment.body.lower(),comment.author.name,comment.parent_id)
-					
-							
-				else:
-					print("User ignored: %s" %comment.author.name)
-				
-				
-				if comment.body.lower() == 'scoreboard':
-					r = getColorsforGame(*connectDB(),parent_ID="t3_"+redditID)
-					#sendscoreboard(True,r,comment.id)
-				
-			time.sleep(0.05)
+			
+			
+			
+			except Exception as err:
+				print(str(err))
+		
+		
+		
+		
+	
 			
 			
 			
 a = MO()
-a.streamPosts()			
+db= DBhelper()
+a.getDatabase(db)
+
+#a.startGame("hveod8")	
+#a.closeGame("hveod8",2)		
+a.streamAll()	
+	
+
+
