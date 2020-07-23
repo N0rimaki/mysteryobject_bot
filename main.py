@@ -6,6 +6,7 @@ __version__ = "1.0.0"
 
 import praw
 import os
+import re
 from datetime import datetime
 import configparser
 import logging as log
@@ -192,12 +193,17 @@ class MO:
 				for submission in submission_stream:
 					if submission is None:
 						break
-	
-					#here we monitor for new submissions
-					self.getDatabase(db.addNewGame(submission))	
-					self.initialComment(submission.id)
-					self.updateUserFlair(submission.author.name)
-					log.info("new Game detected: %s, %s, %s",submission.author.name,submission.title, submission.link_flair_text)
+					regex = r"https:\/\/?(.+)redd\.it(.?)"
+					if re.search(regex, submission.url, re.MULTILINE):
+						log.info("IMAGE found")	
+								
+						#here we monitor for new submissions
+						self.getDatabase(db.addNewGame(submission))	
+						#self.initialComment(submission.id)
+						self.updateUserFlair(submission.author.name)
+					else:
+						log.info("no Image found")
+					log.info("new Game detected: %s, %s, %s, %s",submission.author.name,submission.title,submission.link_flair_text,submission.url)
 
 			except Exception as err:
 				log.error("streamall() ",str(err))
