@@ -77,13 +77,11 @@ class MO:
 		None
 	
 	def startGame(self,message,solution=None):
-		submission = self.r.submission(id=message.id)
+		submission = self.r.submission(id=message.subject)
 		#setFlair
 		submission.flair.select(self.flair_running)
 		#unLockThread
 		submission.mod.unlock()
-		self.initialComment(message.id)
-		self.updateUserFlair(message.author.name)
 		#send message to creator that puzzle has started? Nope
 		log.info("Game started %s %s %s %s",submission.author.name,submission.id,submission.title,str(solution))	
 
@@ -120,7 +118,7 @@ class MO:
 		#count how many puzzles the person solved
 			#update the flair Solved:xx
 		solved = self.getDatabase(db.getSolvedbyUser(authorname))
-		flairtext = None
+		flairtext = ""
 		
 		for r in solved:
 			if r[0] >= 1:
@@ -142,7 +140,7 @@ class MO:
 		user = comment.author.name
 		#made mod submission with winner
 		submission = self.r.submission(id=parent_ID)
-		modcommentid = submission.reply("IAM THE LAW - User r/"+user+" has won the round.\r\nOPs solutions: "+solution)
+		modcommentid = submission.reply("IAM THE LAW - User r/"+user+" has won the round.\n\rOPs solutions: "+solution)
 		#made mod comment sticky 
 		comment = self.r.comment(modcommentid)
 		comment.mod.distinguish(how="yes", sticky=True)		
@@ -171,7 +169,7 @@ class MO:
 
 		#made mod submission with winner
 		submission = self.r.submission(id=rid)
-		modcommentid = submission.reply("Guess what the Object is, just make a first level comment with your guess.")
+		modcommentid = submission.reply("Post what you guess the object in the picture could be, just comment the picture.")
 		#made mod comment sticky 
 		comment = self.r.comment(modcommentid)
 		comment.mod.distinguish(how="yes", sticky=True)		
@@ -197,7 +195,8 @@ class MO:
 	
 					#here we monitor for new submissions
 					self.getDatabase(db.addNewGame(submission))	
-
+					self.initialComment(submission.id)
+					self.updateUserFlair(submission.author.name)
 					log.info("new Game detected: %s, %s, %s",submission.author.name,submission.title, submission.link_flair_text)
 
 			except Exception as err:
