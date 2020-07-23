@@ -104,7 +104,7 @@ class MO:
 			solution = str(s[0])
 		
 			
-			if comment.body  in solution:
+			if comment.body.lower()  in solution.lower():
 				
 				self.madeWinnerComment(comment,parent_ID)
 				self.closeGame(parent_ID,1)
@@ -177,10 +177,10 @@ class MO:
 				for submission in submission_stream:
 					if submission is None:
 						break
-					elif submission.link_flair_text == 'on hold':	
+					#elif (submission.link_flair_text == 'on hold' or submission.link_flair_text == 'game on'):	
 					#print(submission.title)
-						self.getDatabase(db.addNewGame(submission))	
-						log.info("new Game detected: %s, %s, %s",submission.author.name,submission.title, submission.link_flair_text)
+					self.getDatabase(db.addNewGame(submission))
+					log.info("new Game detected: %s, %s, %s",submission.author.name,submission.title, submission.link_flair_text)
 
 			except Exception as err:
 				log.error("streamall() ",str(err))
