@@ -116,6 +116,12 @@ class DBhelper:
 		result = self.c.fetchall()
 		return result
 
+	def getCreatedbyUser(self,authorname):
+		self.c.execute("Select count() as counter from Games where authorname = ?",(authorname,))
+		self.database.commit()
+		result = self.c.fetchall()
+		return result
+
 	def updateSolution(self,permalink,solution):
 		logdb("in Methode","updateSolution","info")
 

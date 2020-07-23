@@ -84,6 +84,7 @@ class MO:
 		submission.flair.select(self.flair_running)
 		#unLockThread
 		submission.mod.unlock()
+		self.initialComment()
 		#send message to creator that puzzle has started? Nope
 		log.info("Game started %s %s %s %s",submission.author.name,submission.id,submission.title,str(solution))	
 
@@ -119,10 +120,16 @@ class MO:
 	def updateUserFlair(self,authorname):
 		#count how many puzzles the person solved
 			#update the flair Solved:xx
-		result = self.getDatabase(db.getSolvedbyUser(authorname))
-		for r in result:
+		solved = self.getDatabase(db.getSolvedbyUser(authorname))
+		
+		for r in solved:
 			flairtext="solved:"+str(r[0])
 		
+		created = self.getCreatedbyUser(db.getSolvedbyUser(authorname))
+		for c in created:
+			if c >=1:
+				flairtext.append() = "|created:"+str(c[0])
+				
 		self.r.subreddit(self.subredditname).flair.set(authorname, flairtext)
 		log.info("Userflair changed %s %s",authorname,flairtext)	
 
@@ -138,7 +145,7 @@ class MO:
 		#made mod comment sticky 
 		comment = self.r.comment(modcommentid)
 		comment.mod.distinguish(how="yes", sticky=True)		
-		log.info("Made Mod Comment")	
+		log.info("did the winner comment")	
 		None
 		
 	def getMessages(self):
@@ -157,11 +164,21 @@ class MO:
 		#Done by Automoderator
 		None
 		
-	def hint(self):
+	def initialComment(self):
 		#upvote this comment to get a hint
 		#10 updoots post first and last letter X......xrange
+
+		#made mod submission with winner
+		submission = self.r.submission(id=parent_ID)
+		modcommentid = submission.reply("Guess what the Object is, just make a first level comment with your guess.")
+		#made mod comment sticky 
+		comment = self.r.comment(modcommentid)
+		comment.mod.distinguish(how="yes", sticky=True)		
+		log.info("create inital comment")	
 		None
-		
+
+
+	
 	def streamAll(self):
 		comment_stream = self.r.subreddit(self.subredditname).stream.comments(pause_after=-1)
 		submission_stream = self.r.subreddit(self.subredditname).stream.submissions(pause_after=-1)
@@ -170,17 +187,16 @@ class MO:
 				for comment in comment_stream:
 					if comment is None:
 						break
-					#print(comment.author.name)
-					#print(comment.body)
+					#if some comment is found, it enter here the processing of the comment
 					self.processComment(comment)
 					
 				for submission in submission_stream:
 					if submission is None:
 						break
-					elif submission.link_flair_text == 'on hold':	
-					#print(submission.title)
-						self.getDatabase(db.addNewGame(submission))	
-						log.info("new Game detected: %s, %s, %s",submission.author.name,submission.title, submission.link_flair_text)
+	
+					#here we monitor for new submissions
+					self.getDatabase(db.addNewGame(submission))	
+					log.info("new Game detected: %s, %s, %s",submission.author.name,submission.title, submission.link_flair_text)
 
 			except Exception as err:
 				log.error("streamall() ",str(err))
@@ -194,13 +210,10 @@ class MO:
 	
 	
 if __name__ == "__main__":			
-	a = MO()
+	obj = MO()
 	db= DBhelper()
-	a.getDatabase(db)
-
-	#a.startGame("hveod8")	
-	#a.closeGame("hveod8",2)		
-	a.streamAll()
+	obj.getDatabase(db)
+	obj.streamAll()
 	
 
 
