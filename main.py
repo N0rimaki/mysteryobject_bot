@@ -125,10 +125,10 @@ class MO:
 		for r in solved:
 			flairtext="solved:"+str(r[0])
 		
-		created = self.getCreatedbyUser(db.getSolvedbyUser(authorname))
+		created = self.getDatabase(db.getCreatedbyUser(authorname))
 		for c in created:
-			if c >=1:
-				flairtext.append() = "|created:"+str(c[0])
+			if c[0] >=1:
+				flairtext = flairtext+"|created:"+str(c[0])
 				
 		self.r.subreddit(self.subredditname).flair.set(authorname, flairtext)
 		log.info("Userflair changed %s %s",authorname,flairtext)	

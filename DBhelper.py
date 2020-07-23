@@ -117,7 +117,7 @@ class DBhelper:
 		return result
 
 	def getCreatedbyUser(self,authorname):
-		self.c.execute("Select count() as counter from Games where authorname = ?",(authorname,))
+		self.c.execute("Select count() as counter from Games where author = ?",(authorname,))
 		self.database.commit()
 		result = self.c.fetchall()
 		return result
