@@ -105,7 +105,7 @@ class MO:
 			solution = str(s[0])
 		
 			
-			if comment.body  in solution:
+			if comment.body.lower()  in solution.lower():
 				
 				self.madeWinnerComment(comment,parent_ID)
 				self.closeGame(parent_ID,1)
@@ -196,6 +196,7 @@ class MO:
 	
 					#here we monitor for new submissions
 					self.getDatabase(db.addNewGame(submission))	
+
 					log.info("new Game detected: %s, %s, %s",submission.author.name,submission.title, submission.link_flair_text)
 
 			except Exception as err:
