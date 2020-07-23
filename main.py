@@ -84,7 +84,8 @@ class MO:
 		submission.flair.select(self.flair_running)
 		#unLockThread
 		submission.mod.unlock()
-		self.initialComment()
+		self.initialComment(rid)
+		self.updateUserFlair(comment.author.name)
 		#send message to creator that puzzle has started? Nope
 		log.info("Game started %s %s %s %s",submission.author.name,submission.id,submission.title,str(solution))	
 
@@ -107,7 +108,7 @@ class MO:
 			
 			if comment.body.lower()  in solution.lower():
 				
-				self.madeWinnerComment(comment,parent_ID)
+				self.madeWinnerComment(comment,parent_ID,solution)
 				self.closeGame(parent_ID,1)
 				self.getDatabase(db.updateStatus(parent_ID,1))
 				self.getDatabase(db.addWinner(comment.author.name,comment.submission.permalink,comment.submission.title))
@@ -121,9 +122,11 @@ class MO:
 		#count how many puzzles the person solved
 			#update the flair Solved:xx
 		solved = self.getDatabase(db.getSolvedbyUser(authorname))
+		flairtext = None
 		
 		for r in solved:
-			flairtext="solved:"+str(r[0])
+			if r[0] >= 1:
+				flairtext="solved:"+str(r[0])
 		
 		created = self.getDatabase(db.getCreatedbyUser(authorname))
 		for c in created:
@@ -135,13 +138,13 @@ class MO:
 
 		None
 	
-	def madeWinnerComment(self,comment,parent_ID):
+	def madeWinnerComment(self,comment,parent_ID,solution):
 		#reply that user have won
 		comment.reply("you win this round")
 		user = comment.author.name
 		#made mod submission with winner
 		submission = self.r.submission(id=parent_ID)
-		modcommentid = submission.reply("IAM THE LAW - User r/"+user+" has won the round")
+		modcommentid = submission.reply("IAM THE LAW - User r/"+user+" has won the round.\r\nOPs solutions: "+solution)
 		#made mod comment sticky 
 		comment = self.r.comment(modcommentid)
 		comment.mod.distinguish(how="yes", sticky=True)		
@@ -164,18 +167,18 @@ class MO:
 		#Done by Automoderator
 		None
 		
-	def initialComment(self):
+	def initialComment(self,rid):
 		#upvote this comment to get a hint
 		#10 updoots post first and last letter X......xrange
 
 		#made mod submission with winner
-		submission = self.r.submission(id=parent_ID)
+		submission = self.r.submission(id=rid)
 		modcommentid = submission.reply("Guess what the Object is, just make a first level comment with your guess.")
 		#made mod comment sticky 
 		comment = self.r.comment(modcommentid)
 		comment.mod.distinguish(how="yes", sticky=True)		
 		log.info("create inital comment")	
-		None
+		
 
 
 	
