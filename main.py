@@ -16,8 +16,6 @@ now = datetime.now()
 timestamp = datetime.timestamp(now)
 timeMinusOneDay = timestamp-(24*60*60)
 
-
-#LOG_FILENAME = "/home/pi/mysteryobject_bot/log_MObot.txt"
 LOG_FILENAME = "./log_Main.log"
 
 
@@ -78,14 +76,14 @@ class MO:
 		self.startGame(rid)
 		None
 	
-	def startGame(self,rid,solution=None):
-		submission = self.r.submission(id=rid)
+	def startGame(self,message,solution=None):
+		submission = self.r.submission(id=message.id)
 		#setFlair
 		submission.flair.select(self.flair_running)
 		#unLockThread
 		submission.mod.unlock()
-		self.initialComment(rid)
-		self.updateUserFlair(comment.author.name)
+		self.initialComment(message.id)
+		self.updateUserFlair(message.author.name)
 		#send message to creator that puzzle has started? Nope
 		log.info("Game started %s %s %s %s",submission.author.name,submission.id,submission.title,str(solution))	
 

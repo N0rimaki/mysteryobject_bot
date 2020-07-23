@@ -47,7 +47,7 @@ class MM:
 			my_list = message.body.split(",")
 			self.getDatabase(db.updateSolution(message.subject,str(my_list)))
 			message.mark_read()
-			MO.startGame(self,message.subject,my_list)		
+			MO.startGame(self,message,my_list)		
 		except Exception as err:
 			log.error("something wrong processMessage(): ",str(err))	
 			self.rebootClass()
