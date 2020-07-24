@@ -7,6 +7,7 @@ __version__ = "1.0.0"
 import praw
 import os
 import re
+import ast
 from datetime import datetime
 import configparser
 import logging as log
@@ -101,9 +102,16 @@ class MO:
 		ss = self.getDatabase(db.getSolutionforID(parent_ID))
 		for s in ss:
 			solution = str(s[0])
-		
+			tmpsolution = solution.lower()
 			
-			if comment.body.lower()  in solution.lower():
+			tmpsolution = ast.literal_eval(tmpsolution)
+			tmpsolution = [n.strip() for n in tmpsolution]
+			
+			userguess = comment.body.lower()
+			if [s for s in tmpsolution if s == userguess]:
+
+
+			#if comment.body.lower()  in tmpsolution:
 				
 				self.madeWinnerComment(comment,parent_ID,solution)
 				self.closeGame(parent_ID,1)
@@ -193,7 +201,7 @@ class MO:
 				for submission in submission_stream:
 					if submission is None:
 						break
-					regex = r"https:\/\/?(.+)redd\.it(.?)"
+					regex = r"https:\/\/i\.redd\.it|https:\/\/i\.imgur\.com"
 					if re.search(regex, submission.url, re.MULTILINE):
 						log.info("IMAGE found")	
 								
@@ -203,7 +211,7 @@ class MO:
 						self.updateUserFlair(submission.author.name)
 					else:
 						log.info("no Image found")
-					log.info("new Game detected: %s, %s, %s, %s",submission.author.name,submission.title,submission.link_flair_text,submission.url)
+					log.info("Submission detected: %s, %s, %s, %s",submission.author.name,submission.title,submission.link_flair_text,submission.url)
 
 			except Exception as err:
 				log.error("streamall() ",str(err))

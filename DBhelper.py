@@ -96,8 +96,6 @@ class DBhelper:
 		return result
 
 	def updateSolution(self,permalink,solution):
-		logdb("in Methode","updateSolution","info")
-
 		self.c.execute("UPDATE Games SET solution = ? WHERE rID = ?",(solution,permalink))
 		self.database.commit()	
 			

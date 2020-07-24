@@ -49,7 +49,7 @@ class MM:
 			message.mark_read()
 			MO.startGame(self,message,my_list)		
 		except Exception as err:
-			log.error("something wrong processMessage(): ",str(err))	
+			log.error("something wrong processMessage(): %s",str(err))	
 			self.rebootClass()
 		None
 		
@@ -67,7 +67,7 @@ class MM:
 				log.info("Message recieved: %s %s %s",message.author,message.subject,message.body)	
 				
 		except Exception as err:
-			log.error("something wrong streamMessages(): ",str(err))	
+			log.error("something wrong streamMessages(): %s",str(err))	
 			self.rebootClass()
 			
 		None
