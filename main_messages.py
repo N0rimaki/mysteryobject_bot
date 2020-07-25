@@ -49,10 +49,10 @@ class MM:
 			message.mark_read()
 			MO.startGame(self,message,my_list)		
 		except Exception as err:
-			log.error("something wrong processMessage(): %s",str(err))	
+			log.error("something wrong processMessage(): {}".format(str(err)))	
 			self.rebootClass()
 		None
-		
+	
 	def sendMessageNoSolution(self):
 		#i cant read your solution, seems there is some issue with formating
 		#try again
@@ -64,10 +64,10 @@ class MM:
 			for message in messages:
 				self.processMessage(message)
 				
-				log.info("Message recieved: %s %s %s",message.author,message.subject,message.body)	
+				log.info("Message recieved: {} {} {}".format(message.author,message.subject,message.body))	
 				
 		except Exception as err:
-			log.error("something wrong streamMessages(): %s",str(err))	
+			log.error("something wrong streamMessages(): {}".format(str(err)))	
 			self.rebootClass()
 			
 		None

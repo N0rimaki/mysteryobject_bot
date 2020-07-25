@@ -41,7 +41,7 @@ class MO:
 			reddit.validate_on_submit=True	
 			self.r = reddit
 		except Exception as err:
-			log.error("__init__() ",str(err))
+			log.error("Error at __init__() ",str(err))
 			self.rebootClass(err)
 			
 			
@@ -70,7 +70,7 @@ class MO:
 		#LockThread
 		submission.mod.lock()
 		#comment winner comment, done in main_messages.py
-		log.info("Game closed %s %s %s",submission.author.name,submission.id, submission.title)	
+		log.info("Game closed {} {} {}".format(submission.author.name,submission.id, submission.title))	
 
 		None
 	
@@ -85,9 +85,11 @@ class MO:
 		#unLockThread
 		submission.mod.unlock()
 		#send message to creator that puzzle has started? Nope
-		log.info("Game started %s %s %s %s",submission.author.name,submission.id,submission.title,str(solution))	
-
+		log.info("Game started  {} {} {} {}".format(submission.author.name,submission.id,submission.title,str(solution)))	
 		None
+	
+	
+		
 	
 	def check24h(self,id):
 		#when no reply after 24h delte the submission
@@ -119,7 +121,7 @@ class MO:
 				self.getDatabase(db.addWinner(comment.author.name,comment.submission.permalink,comment.submission.title))
 				self.updateUserFlair(comment.author.name)
 				
-				log.info("Solution found: %s %s %s",parent_ID,comment.submission.title,comment.body)	
+				log.info("Solution found: {} {} {}".format(parent_ID,comment.submission.title,comment.body))
 			
 	
 	
@@ -139,7 +141,7 @@ class MO:
 				flairtext = flairtext+"|created:"+str(c[0])
 				
 		self.r.subreddit(self.subredditname).flair.set(authorname, flairtext)
-		log.info("Userflair changed %s %s",authorname,flairtext)	
+		log.info("Userflair changed {} {}".format(authorname,flairtext))
 
 		None
 	
@@ -211,7 +213,7 @@ class MO:
 						self.updateUserFlair(submission.author.name)
 					else:
 						log.info("no Image found")
-					log.info("Submission detected: %s, %s, %s, %s",submission.author.name,submission.title,submission.link_flair_text,submission.url)
+					log.info("Submission detected: {},{},{},{}".format(submission.author.name,submission.title,submission.link_flair_text,submission.url))
 
 			except Exception as err:
 				log.error("streamall() ",str(err))
@@ -219,7 +221,7 @@ class MO:
 	
 	
 	def rebootClass(self,err):
-		log.error("FATAL, restart class %s",str(err))	
+		log.error("FATAL, restart class {}".format(str(err)))	
 		os.system("python main.py")	
 	
 	
