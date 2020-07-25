@@ -109,7 +109,8 @@ class MO:
 			tmpsolution = ast.literal_eval(tmpsolution)
 			tmpsolution = [n.strip() for n in tmpsolution]
 			
-			userguess = comment.body.lower()
+			userguess = re.sub(r"[^A-Za-z0-9ÄäÖöÜü ]","",comment.body.lower())
+
 			if [s for s in tmpsolution if s == userguess]:
 
 
