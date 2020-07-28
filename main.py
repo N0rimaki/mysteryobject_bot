@@ -18,7 +18,7 @@ now = datetime.now()
 timestamp = datetime.timestamp(now)
 timeMinusOneDay = timestamp-(24*60*60)
 
-LOG_FILENAME = "./log_Main.log"
+LOG_FILENAME = "./log_main.log"
 
 
 ___debug___ = True
@@ -102,14 +102,20 @@ class MO:
 		parent_ID = comment.parent_id.replace('t3_','')
 		
 		ss = self.getDatabase(db.getSolutionforID(parent_ID))
+		
 		for s in ss:
 			solution = str(s[0])
 			tmpsolution = solution.lower()
 			
-			tmpsolution = ast.literal_eval(tmpsolution)
-			tmpsolution = [n.strip() for n in tmpsolution]
+			try:
+				tmpsolution = ast.literal_eval(tmpsolution)
+				tmpsolution = [n.strip() for n in tmpsolution]
+			except Exception as err:
+				log.error("string to list: {}".format(str(err)))			
 			
-			userguess = re.sub(r"[^A-Za-z0-9ÄäÖöÜü ]","",comment.body.lower())
+			userguess = re.sub(r"[^A-Za-z0-9ÄäÖöÜü$€¥£¢₧ƒ ]","",comment.body.lower().strip())
+
+			log.info("User: {} try {} = {} on {}".format(comment.author.name,userguess,tmpsolution,parent_ID))
 
 			if [s for s in tmpsolution if s == userguess]:
 
@@ -217,7 +223,7 @@ class MO:
 					log.info("Submission detected: {},{},{},{}".format(submission.author.name,submission.title,submission.link_flair_text,submission.url))
 
 			except Exception as err:
-				log.error("streamall() ",str(err))
+				log.error("streamall() ERROR {} ",str(err))
 				self.rebootClass(err)
 	
 	
