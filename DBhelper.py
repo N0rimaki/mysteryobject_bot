@@ -93,6 +93,12 @@ class DBhelper:
 		self.c.execute("Select count() as counter from Games where author = ?",(authorname,))
 		self.database.commit()
 		result = self.c.fetchall()
+		return result	
+	
+	def getLeaderboard(self):
+		self.c.execute("Select authorname,count() as counter from statistics GROUP by authorname order by counter desc")
+		self.database.commit()
+		result = self.c.fetchall()
 		return result
 
 	def updateSolution(self,permalink,solution):

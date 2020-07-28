@@ -12,7 +12,7 @@ from datetime import datetime
 import configparser
 import logging as log
 from DBhelper import *
-from main_messages import *
+from messages import *
 
 now = datetime.now()
 timestamp = datetime.timestamp(now)
@@ -41,24 +41,22 @@ class MO:
 			reddit.validate_on_submit=True	
 			self.r = reddit
 		except Exception as err:
-			log.error("Error at __init__() ",str(err))
+			log.error("Error at __init__() {}".format(str(err)))
 			self.rebootClass(err)
-			
-			
+				
 		self.flair_solved = "882c5aa6-c926-11ea-a888-0e38155ddc41"
 		self.flair_running = "7ae507b2-c926-11ea-8bf8-0ef44622e4b7"
 		self.flair_onhold = "4aecca10-c99c-11ea-bc5c-0e190f721893"
 		
-		log.info("init Main Bot Class")	
+		log.info("init() Main Bot Class")	
 		None
 	
 	
 	def getDatabase(self,db):
+		#get Database obj and pass it
 		self.db=db
 		return db
-		
-		
-		
+			
 	def closeGame(self,rid,reason):
 		submission = self.r.submission(id=rid)
 		#setFlair
@@ -74,9 +72,6 @@ class MO:
 
 		None
 	
-	def startGameGateway(rid):
-		self.startGame(rid)
-		None
 	
 	def startGame(self,message,solution=None):
 		submission = self.r.submission(id=message.subject)
@@ -87,15 +82,7 @@ class MO:
 		#send message to creator that puzzle has started? Nope
 		log.info("Game started  {} {} {} {}".format(submission.author.name,submission.id,submission.title,str(solution)))	
 		None
-	
-	
-		
-	
-	def check24h(self,id):
-		#when no reply after 24h delte the submission
-		#set flair locked
-		#remove submission
-		None
+
 
 	def processComment(self,comment):
 		#Here we analyze the comment and compare user comment with databasesolution
@@ -121,12 +108,16 @@ class MO:
 
 
 			#if comment.body.lower()  in tmpsolution:
+				if ___runprod___ == True:	
+					self.madeWinnerComment(comment,parent_ID,solution)
+					self.closeGame(parent_ID,1)
+					self.getDatabase(db.updateStatus(parent_ID,1))
+					self.getDatabase(db.addWinner(comment.author.name,comment.submission.permalink,comment.submission.title))
+					self.updateUserFlair(comment.author.name)
+					self.updateLeaderboard()
+				else:
+					log.info("RUN only in DEMO mode, no changes were made at the submission. processComment()")
 				
-				self.madeWinnerComment(comment,parent_ID,solution)
-				self.closeGame(parent_ID,1)
-				self.getDatabase(db.updateStatus(parent_ID,1))
-				self.getDatabase(db.addWinner(comment.author.name,comment.submission.permalink,comment.submission.title))
-				self.updateUserFlair(comment.author.name)
 				
 				log.info("Solution found: {} {} {}".format(parent_ID,comment.submission.title,comment.body))
 			
@@ -134,7 +125,7 @@ class MO:
 	
 	def updateUserFlair(self,authorname):
 		#count how many puzzles the person solved
-			#update the flair Solved:xx
+		#update the flair solved:XX|created:XX
 		solved = self.getDatabase(db.getSolvedbyUser(authorname))
 		flairtext = ""
 		
@@ -149,7 +140,6 @@ class MO:
 				
 		self.r.subreddit(self.subredditname).flair.set(authorname, flairtext)
 		log.info("Userflair changed {} {}".format(authorname,flairtext))
-
 		None
 	
 	def madeWinnerComment(self,comment,parent_ID,solution):
@@ -158,13 +148,74 @@ class MO:
 		user = comment.author.name
 		#made mod submission with winner
 		submission = self.r.submission(id=parent_ID)
-		modcommentid = submission.reply("IAM THE LAW - User r/"+user+" has won the round.\n\rOPs solutions: "+solution)
+		modcommentid = submission.reply("I AM THE LAW - User u/"+user+" has won the round.\n\rOPs solutions: "+solution)
 		#made mod comment sticky 
 		comment = self.r.comment(modcommentid)
 		comment.mod.distinguish(how="yes", sticky=True)		
 		log.info("did the winner comment")	
 		None
 		
+
+	def streamAll(self):
+		
+		comment_stream = self.r.subreddit(self.subredditname).stream.comments(pause_after=-1)
+		submission_stream = self.r.subreddit(self.subredditname).stream.submissions(pause_after=-1)
+		while True:
+			try:
+				for comment in comment_stream:
+					if comment is None:
+						break
+					if comment.author.name != 'AutoModerator':	
+						#if some comment is found, it enter here the processing of the comment
+						self.processComment(comment)
+					
+				for submission in submission_stream:
+					if submission is None:
+						break
+					regex = r"https:\/\/i\.redd\.it|https:\/\/i\.imgur\.com"
+					if re.search(regex, submission.url, re.MULTILINE):
+						log.info("IMAGE found")	
+						
+						if ___runprod___ == True:
+							#here we monitor for new submissions
+							self.getDatabase(db.addNewGame(submission))	
+							#self.initialComment(submission.id)
+							self.updateUserFlair(submission.author.name)
+						else:
+							log.info("RUN only in DEMO mode, no changes were made at the submission. streamAll()")
+					else:
+						log.info("no Image found")
+					log.info("Submission detected: {},{},{},{}".format(submission.author.name,submission.title,submission.link_flair_text,submission.url))
+
+			except Exception as err:
+				log.error("streamall() ERROR {} ".format(str(err)))
+				self.rebootClass(err)
+	
+	
+	
+	def updateLeaderboard(self):
+		styles = {"backgroundColor": "#FFFF66", "headerColor": "#3333EE"}
+		widgets = self.r.subreddit(self.subredditname).widgets
+		new_text = self.getDatabase(db.getLeaderboard())
+		
+		row_text = "Rank|username|solved\r\n---|---|---\r\n"
+	
+		i=1
+		for row in new_text:
+			row_text += str(i)+"|"+str(row[0])+"|"+str(row[1])+"\r\n"
+			
+			i=i+1
+		#print(row_text)
+		
+		try:
+			for widget in widgets.sidebar:
+				widget.mod.update(shortName="Leaderboard",text=row_text)
+				log.info("updateLeaderboard() done")
+		except Exception as err:
+			log.error("updateLeaderboard() {}".format(str(err)))
+	None
+	
+	############# functions: abdoned, automod, todo, wontdo
 	def getMessages(self):
 		#done in main_messages.py
 		None
@@ -174,58 +225,21 @@ class MO:
 	def sendMessageSuccesfullSolved(self):
 		#Your puzzle ID has solved by 
 		#wontdothis
-		None
-		
-	
+		None	
 	def sendAuthorWelcomeMessage(self):
-		#Done by Automoderator
+		#rules for Author
+		#done by AutomMderator
 		None
-		
-	def initialComment(self,rid):
-		#upvote this comment to get a hint
-		#10 updoots post first and last letter X......xrange
-
-		#made mod submission with winner
-		submission = self.r.submission(id=rid)
-		modcommentid = submission.reply("Post what you guess the object in the picture could be, just comment the picture.")
-		#made mod comment sticky 
-		comment = self.r.comment(modcommentid)
-		comment.mod.distinguish(how="yes", sticky=True)		
-		log.info("create inital comment")	
-		
-
-
-	
-	def streamAll(self):
-		comment_stream = self.r.subreddit(self.subredditname).stream.comments(pause_after=-1)
-		submission_stream = self.r.subreddit(self.subredditname).stream.submissions(pause_after=-1)
-		while True:
-			try:
-				for comment in comment_stream:
-					if comment is None:
-						break
-					#if some comment is found, it enter here the processing of the comment
-					self.processComment(comment)
-					
-				for submission in submission_stream:
-					if submission is None:
-						break
-					regex = r"https:\/\/i\.redd\.it|https:\/\/i\.imgur\.com"
-					if re.search(regex, submission.url, re.MULTILINE):
-						log.info("IMAGE found")	
-								
-						#here we monitor for new submissions
-						self.getDatabase(db.addNewGame(submission))	
-						#self.initialComment(submission.id)
-						self.updateUserFlair(submission.author.name)
-					else:
-						log.info("no Image found")
-					log.info("Submission detected: {},{},{},{}".format(submission.author.name,submission.title,submission.link_flair_text,submission.url))
-
-			except Exception as err:
-				log.error("streamall() ERROR {} ",str(err))
-				self.rebootClass(err)
-	
+	def initialComment(self):
+		#rules for gamers
+		#done by AutomMderator
+		None
+	def check24h(self,id):
+		#when no reply after 24h delte the submission
+		#set flair locked
+		#remove submission
+		None
+	#####################################
 	
 	def rebootClass(self,err):
 		log.error("FATAL, restart class {}".format(str(err)))	
