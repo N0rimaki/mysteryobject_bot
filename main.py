@@ -27,7 +27,7 @@ ___runprod___= False
 if ___debug___ == True:
 		log.basicConfig( handlers=[
             log.FileHandler(LOG_FILENAME),
-            log.StreamHandler()],level=log.INFO,format='%(asctime)s : %(levelname)s : %(message)s')
+            log.StreamHandler()],level=log.INFO,format='%(asctime)s ; %(levelname)s ; %(funcName)s() ; %(message)s')
 
 
 
@@ -41,14 +41,14 @@ class MO:
 			reddit.validate_on_submit=True	
 			self.r = reddit
 		except Exception as err:
-			log.error("Error at __init__() {}".format(str(err)))
+			log.error("Exception {}".format(str(err)))
 			self.rebootClass(err)
 				
 		self.flair_solved = "882c5aa6-c926-11ea-a888-0e38155ddc41"
 		self.flair_running = "7ae507b2-c926-11ea-8bf8-0ef44622e4b7"
 		self.flair_onhold = "4aecca10-c99c-11ea-bc5c-0e190f721893"
 		
-		log.info("init() Main Bot Class")	
+		log.info("Init Bot Class")	
 		None
 	
 	
@@ -116,7 +116,7 @@ class MO:
 					self.updateUserFlair(comment.author.name)
 					self.updateLeaderboard()
 				else:
-					log.info("RUN only in DEMO mode, no changes were made at the submission. processComment()")
+					log.info("RUN only in DEMO mode, no changes were made at the submission.")
 				
 				
 				log.info("Solution found: {} {} {}".format(parent_ID,comment.submission.title,comment.body))
@@ -182,13 +182,13 @@ class MO:
 							#self.initialComment(submission.id)
 							self.updateUserFlair(submission.author.name)
 						else:
-							log.info("RUN only in DEMO mode, no changes were made at the submission. streamAll()")
+							log.info("RUN only in DEMO mode, no changes were made at the submission.")
 					else:
 						log.info("no Image found")
 					log.info("Submission detected: {},{},{},{}".format(submission.author.name,submission.title,submission.link_flair_text,submission.url))
 
 			except Exception as err:
-				log.error("streamall() ERROR {} ".format(str(err)))
+				log.error("Exception {} ".format(str(err)))
 				self.rebootClass(err)
 	
 	
@@ -210,9 +210,9 @@ class MO:
 		try:
 			for widget in widgets.sidebar:
 				widget.mod.update(shortName="Leaderboard",text=row_text)
-				log.info("updateLeaderboard() done")
+				log.info("done")
 		except Exception as err:
-			log.error("updateLeaderboard() {}".format(str(err)))
+			log.error("Exception {}".format(str(err)))
 	None
 	
 	############# functions: abdoned, automod, todo, wontdo
