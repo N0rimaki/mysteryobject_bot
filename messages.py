@@ -5,6 +5,7 @@ __license__ = "GPL"
 __version__ = "1.0.0"
 
 import os
+import re
 import praw
 import logging as log
 import requests
@@ -20,7 +21,7 @@ ___runprod___= False
 if ___debug___ == True:
 	log.basicConfig( handlers=[
             log.FileHandler(LOG_FILENAME_message),
-            log.StreamHandler()],level=log.INFO,format='%(asctime)s : %(levelname)s : %(message)s')
+            log.StreamHandler()],level=log.INFO,format='%(asctime)s ; %(levelname)s ; %(funcName)s() ; %(message)s')
 
 
 class MM:
@@ -35,7 +36,7 @@ class MM:
 		self.flair_solved = "882c5aa6-c926-11ea-a888-0e38155ddc41"
 		self.flair_running = "7ae507b2-c926-11ea-8bf8-0ef44622e4b7"
 		self.flair_onhold = "4aecca10-c99c-11ea-bc5c-0e190f721893"
-		log.info("init Main Message Class")	
+		log.info("Start Main Message Class")	
 		None
 	
 	def getDatabase(self,db):
@@ -44,12 +45,13 @@ class MM:
 	
 	def processMessage(self,message):
 		try:
-			my_list = message.body.split(",")
+			userguess = re.sub(r"[^A-Za-z0-9ÄäÖöÜü$€¥£¢₧ƒ\-, ]","",message.body.lower().strip())
+			my_list = userguess.split(",")
 			self.getDatabase(db.updateSolution(message.subject,str(my_list)))
 			message.mark_read()
 			MO.startGame(self,message,my_list)		
 		except Exception as err:
-			log.error("something wrong processMessage(): {}".format(str(err)))	
+			log.error("something wrong {}".format(str(err)))	
 			self.rebootClass()
 		None
 	
@@ -67,7 +69,7 @@ class MM:
 				log.info("Message recieved: {} {} {}".format(message.author,message.subject,message.body))	
 				
 		except Exception as err:
-			log.error("something wrong streamMessages(): {}".format(str(err)))	
+			log.error("something wrong {}".format(str(err)))	
 			self.rebootClass()
 			
 		None

@@ -101,16 +101,15 @@ class MO:
 			except Exception as err:
 				log.error("string to list: {}".format(str(err)))			
 			
-			userguess = re.sub(r"[^A-Za-z0-9ÄäÖöÜü$€¥£¢₧ƒ ]","",comment.body.lower().strip())
+			userguess = re.sub(r"[^A-Za-z0-9ÄäÖöÜü$€¥£¢₧ƒ\- ]","",comment.body.lower().strip())
 
 			log.info("User: {} try {} = {} on {}".format(comment.author.name,userguess,tmpsolution,parent_ID))
 
-			if [s for s in tmpsolution if s == userguess]:
-
+			if [s for s in tmpsolution if s in userguess]:
 
 			#if comment.body.lower()  in tmpsolution:
 				if ___runprod___ == True:	
-					self.madeWinnerComment(comment,parent_ID,solution)
+					self.madeWinnerComment(comment,parent_ID,tmpsolution)
 					self.closeGame(parent_ID,1)
 					self.getDatabase(db.updateStatus(parent_ID,1))
 					self.getDatabase(db.addWinner(comment.author.name,comment.submission.permalink,comment.submission.title))
@@ -140,45 +139,54 @@ class MO:
 			except Exception as err:
 				log.error("string to list: {}".format(str(err)))			
 			
-			userguess = re.sub(r"[^A-Za-z0-9ÄäÖöÜü$€¥£¢₧\- ]","",comment.body.lower().strip())
+			userguess = re.sub(r"[^A-Za-z0-9ÄäÖöÜü$€¥£¢₧\- ]","",comment.body.lower().strip()).split(' ')
 			
 			prettytime = datetime.utcfromtimestamp(comment.created_utc).strftime('%Y-%m-%d %H:%M:%S')
 			log.info("User: {} at {} try \"{}\" = {} on {}".format(comment.author.name,prettytime,userguess,tmpsolution,parent_ID))
 
-			for solutionword in tmpsolution:
-				if solutionword in userguess:
-					if ___runprod___ == True:
-						self.madeWinnerComment(comment,parent_ID,solution)
-						self.closeGame(parent_ID,1)
-						self.getDatabase(db.updateStatus(parent_ID,1))
-						self.getDatabase(db.addWinner(comment.author.name,comment.submission.permalink,comment.submission.title))
-						self.updateUserFlair(comment.author.name)
-						self.updateLeaderboard()
-					else:
-						log.info("RUN only in DEMO mode, no changes were made at the submission.")
-					
-					
-					log.info("Solution found: {} {} {}".format(parent_ID,comment.submission.title,comment.body))
+			#for solutionword in tmpsolution:
+			checktuple = self.checkSolution(userguess,tmpsolution)
+			if checktuple[0]:
+				if ___runprod___ == True:
+					self.madeWinnerComment(comment,parent_ID,tmpsolution)
+					self.closeGame(parent_ID,1)
+					self.getDatabase(db.updateStatus(parent_ID,1))
+					self.getDatabase(db.addWinner(comment.author.name,comment.submission.permalink,comment.submission.title))
+					self.updateUserFlair(comment.author.name)
+					self.updateLeaderboard()
+				else:
+					log.info("RUN only in DEMO mode, no changes were made at the submission.")
+				
+				
+				log.info("Solution found: {} {} {} {} {}".format(parent_ID,comment.submission.title,str(checktuple[1]),str(tmpsolution),str(userguess)))
 	
-	
+	def checkSolution(self,userguess,solution):
+		#check if the guess of the user is includet in the solution
+		#this works very well, because booth are lists and compare word==word
+		# with for x in y you get matches you dont want
+		c = set(userguess).intersection(set(solution))
+		return bool(c),c
+		
+		
 	def updateUserFlair(self,authorname):
 		#count how many puzzles the person solved
 		#update the flair solved:XX|created:XX
-		solved = self.getDatabase(db.getSolvedbyUser(authorname))
-		flairtext = ""
-		
-		for r in solved:
-			if r[0] >= 1:
-				flairtext="solved:"+str(r[0])
-		
-		created = self.getDatabase(db.getCreatedbyUser(authorname))
-		for c in created:
-			if c[0] >=1:
-				flairtext = flairtext+"|created:"+str(c[0])
-				
-		self.r.subreddit(self.subredditname).flair.set(authorname, flairtext)
-		log.info("Userflair changed {} {}".format(authorname,flairtext))
-		None
+		if authorname != 'wontfixit':
+			solved = self.getDatabase(db.getSolvedbyUser(authorname))
+			flairtext = ""
+			
+			for r in solved:
+				if r[0] >= 1:
+					flairtext="solved:"+str(r[0])
+			
+			created = self.getDatabase(db.getCreatedbyUser(authorname))
+			for c in created:
+				if c[0] >=1:
+					flairtext = flairtext+"|created:"+str(c[0])
+					
+			self.r.subreddit(self.subredditname).flair.set(authorname, flairtext)
+			log.info("Userflair changed {} {}".format(authorname,flairtext))
+			None
 	
 	def madeWinnerComment(self,comment,parent_ID,solution):
 		#reply that user have won
@@ -186,18 +194,18 @@ class MO:
 		user = comment.author.name
 		#made mod submission with winner
 		submission = self.r.submission(id=parent_ID)
-		modcommentid = submission.reply("I AM THE LAW - User u/"+user+" has won the round.\n\rOPs solutions: "+solution)
+		modcommentid = submission.reply("I AM THE LAW - User u/"+user+" has won the round.\n\rOPs solutions: "+str(solution))
 		#made mod comment sticky 
 		comment = self.r.comment(modcommentid)
 		comment.mod.distinguish(how="yes", sticky=True)		
-		log.info("did the winner comment")	
+		log.info("Bot answered the winner comment from {}".format(comment.author.name))	
 		None
 		
 
 	def streamAll(self):
 	
 		start_time = time.time()
-		start_time = start_time-900
+		start_time = start_time-300
 		log.info("Getting Posts not older than {}".format(str(time.ctime(start_time))))
 		
 		
@@ -235,6 +243,7 @@ class MO:
 							
 					else:
 						log.info("no Image found")
+					
 					prettytime = datetime.utcfromtimestamp(submission.created_utc).strftime('%Y-%m-%d %H:%M:%S')	
 					log.info("Submission detected: {},{},{},{},{}".format(prettytime,submission.author.name,submission.title,submission.link_flair_text,submission.url))
 

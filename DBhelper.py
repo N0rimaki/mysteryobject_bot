@@ -13,7 +13,7 @@ from datetime import datetime
 class DBhelper:
 	def __init__(self):
 		
-		self.database = sqlite3.connect('MOB.sqlite')
+		self.database = sqlite3.connect('mysterydb.db')
 		self.c = self.database.cursor()
 		self.created_at = str(datetime.now().strftime('%Y-%m-%d_%H:%M:%S'))
 		return None
@@ -35,7 +35,7 @@ class DBhelper:
 		
 		k='''CREATE TABLE "statistics" (
 	"ID"	INTEGER PRIMARY KEY AUTOINCREMENT,
-	"authorname"	TEXT,
+	"author"	TEXT,
 	"permalink"	TEXT,
 	"title"	TEXT,
 	"created_at"	TEXT
@@ -63,9 +63,9 @@ class DBhelper:
 			None
 		
 		
-	def addWinner(self,authorname,permalink,title):
-		self.c.execute('''INSERT INTO statistics (authorname,permalink,title,created_at)
-					  VALUES(?,?,?,?)''', (authorname,permalink,title,self.created_at))
+	def addWinner(self,author,permalink,title):
+		self.c.execute('''INSERT INTO statistics (author,permalink,title,created_at)
+					  VALUES(?,?,?,?)''', (author,permalink,title,self.created_at))
 		self.database.commit()
 	
 	
@@ -83,8 +83,8 @@ class DBhelper:
 		return result
 	
 	
-	def getSolvedbyUser(self,authorname):
-		self.c.execute("Select count() as counter from statistics where authorname = ?",(authorname,))
+	def getSolvedbyUser(self,author):
+		self.c.execute("Select count() as counter from statistics where author = ?",(author,))
 		self.database.commit()
 		result = self.c.fetchall()
 		return result
@@ -96,7 +96,7 @@ class DBhelper:
 		return result	
 	
 	def getLeaderboard(self):
-		self.c.execute("Select authorname,count() as counter from statistics GROUP by authorname order by counter desc")
+		self.c.execute("Select author,count() as counter from statistics GROUP by author order by counter desc")
 		self.database.commit()
 		result = self.c.fetchall()
 		return result
