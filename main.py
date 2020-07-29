@@ -13,6 +13,7 @@ import configparser
 import logging as log
 from DBhelper import *
 from messages import *
+import time
 
 now = datetime.now()
 timestamp = datetime.timestamp(now)
@@ -22,7 +23,7 @@ LOG_FILENAME = "./log_main.log"
 
 
 ___debug___ = True
-___runprod___= False
+___runprod___= True
 
 if ___debug___ == True:
 		log.basicConfig( handlers=[
@@ -48,7 +49,7 @@ class MO:
 		self.flair_running = "7ae507b2-c926-11ea-8bf8-0ef44622e4b7"
 		self.flair_onhold = "4aecca10-c99c-11ea-bc5c-0e190f721893"
 		
-		log.info("Init Bot Class")	
+		log.info("Starting the Bot Class, omg i'm nervous")	
 		None
 	
 	
@@ -84,7 +85,7 @@ class MO:
 		None
 
 
-	def processComment(self,comment):
+	def processCommentSingleWord(self,comment):
 		#Here we analyze the comment and compare user comment with databasesolution
 		parent_ID = comment.parent_id.replace('t3_','')
 		
@@ -120,7 +121,44 @@ class MO:
 				
 				
 				log.info("Solution found: {} {} {}".format(parent_ID,comment.submission.title,comment.body))
+	
+	
+	
+	def processCommentMutlipleWords(self,comment):
+		#Here we analyze the comment and compare user comment with databasesolution
+		parent_ID = comment.parent_id.replace('t3_','')
+		
+		ss = self.getDatabase(db.getSolutionforID(parent_ID))
+		
+		for s in ss:
+			solution = str(s[0])
+			tmpsolution = solution.lower()
 			
+			try:
+				tmpsolution = ast.literal_eval(tmpsolution)
+				tmpsolution = [n.strip() for n in tmpsolution]
+			except Exception as err:
+				log.error("string to list: {}".format(str(err)))			
+			
+			userguess = re.sub(r"[^A-Za-z0-9ÄäÖöÜü$€¥£¢₧\- ]","",comment.body.lower().strip())
+			
+			prettytime = datetime.utcfromtimestamp(comment.created_utc).strftime('%Y-%m-%d %H:%M:%S')
+			log.info("User: {} at {} try \"{}\" = {} on {}".format(comment.author.name,prettytime,userguess,tmpsolution,parent_ID))
+
+			for solutionword in tmpsolution:
+				if solutionword in userguess:
+					if ___runprod___ == True:
+						self.madeWinnerComment(comment,parent_ID,solution)
+						self.closeGame(parent_ID,1)
+						self.getDatabase(db.updateStatus(parent_ID,1))
+						self.getDatabase(db.addWinner(comment.author.name,comment.submission.permalink,comment.submission.title))
+						self.updateUserFlair(comment.author.name)
+						self.updateLeaderboard()
+					else:
+						log.info("RUN only in DEMO mode, no changes were made at the submission.")
+					
+					
+					log.info("Solution found: {} {} {}".format(parent_ID,comment.submission.title,comment.body))
 	
 	
 	def updateUserFlair(self,authorname):
@@ -157,21 +195,32 @@ class MO:
 		
 
 	def streamAll(self):
+	
+		start_time = time.time()
+		start_time = start_time-900
+		log.info("Getting Posts not older than {}".format(str(time.ctime(start_time))))
+		
 		
 		comment_stream = self.r.subreddit(self.subredditname).stream.comments(pause_after=-1)
 		submission_stream = self.r.subreddit(self.subredditname).stream.submissions(pause_after=-1)
 		while True:
 			try:
 				for comment in comment_stream:
+					
 					if comment is None:
 						break
+					if comment.created_utc < start_time:
+						continue
 					if comment.author.name != 'AutoModerator':	
 						#if some comment is found, it enter here the processing of the comment
-						self.processComment(comment)
+						self.processCommentMutlipleWords(comment)
 					
 				for submission in submission_stream:
 					if submission is None:
 						break
+					if submission.created_utc < start_time:
+						continue
+					#regex for only do some action when picture submission is detected, i bet there is some better methode	
 					regex = r"https:\/\/i\.redd\.it|https:\/\/i\.imgur\.com"
 					if re.search(regex, submission.url, re.MULTILINE):
 						log.info("IMAGE found")	
@@ -183,9 +232,11 @@ class MO:
 							self.updateUserFlair(submission.author.name)
 						else:
 							log.info("RUN only in DEMO mode, no changes were made at the submission.")
+							
 					else:
 						log.info("no Image found")
-					log.info("Submission detected: {},{},{},{}".format(submission.author.name,submission.title,submission.link_flair_text,submission.url))
+					prettytime = datetime.utcfromtimestamp(submission.created_utc).strftime('%Y-%m-%d %H:%M:%S')	
+					log.info("Submission detected: {},{},{},{},{}".format(prettytime,submission.author.name,submission.title,submission.link_flair_text,submission.url))
 
 			except Exception as err:
 				log.error("Exception {} ".format(str(err)))
