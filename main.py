@@ -14,6 +14,7 @@ import logging as log
 from DBhelper import *
 from messages import *
 import time
+import argparse
 
 now = datetime.now()
 timestamp = datetime.timestamp(now)
@@ -122,6 +123,16 @@ class MO:
 				log.info("Solution found: {} {} {}".format(parent_ID,comment.submission.title,comment.body))
 	
 	
+	def runSingleSubmission(self,parent_ID):
+		submission = self.r.submission(id=parent_ID)
+		submission.comment_sort = "old"
+
+		for comment in submission.comments:
+			prettytime = datetime.utcfromtimestamp(comment.created_utc).strftime('%Y-%m-%d %H:%M:%S')
+			log.info("Run Single Submission SID:{} CID:{} - userguess: {} - created_utc: {}".format(parent_ID,comment.id,comment.body,prettytime))
+			self.processCommentMutlipleWords(comment)
+	
+	
 	
 	def processCommentMutlipleWords(self,comment):
 		#Here we analyze the comment and compare user comment with databasesolution
@@ -139,14 +150,14 @@ class MO:
 			except Exception as err:
 				log.error("string to list: {}".format(str(err)))			
 			
-			userguess = re.sub(r"[^A-Za-z0-9ÄäÖöÜü$€¥£¢₧\- ]","",comment.body.lower().strip()).split(' ')
+			userguess = re.sub(r"[^A-Za-z0-9ÄäÖöÜü$€¥£¢₧\- ]","",comment.body.lower().strip())
 			
 			prettytime = datetime.utcfromtimestamp(comment.created_utc).strftime('%Y-%m-%d %H:%M:%S')
-			log.info("User: {} at {} try \"{}\" = {} on {}".format(comment.author.name,prettytime,userguess,tmpsolution,parent_ID))
+			log.info("User: {} at {} try \"{}\" = {} on \"{}/{}\"".format(comment.author.name,prettytime,userguess,tmpsolution,parent_ID,comment.submission.title))
 
 			#for solutionword in tmpsolution:
 			checktuple = self.checkSolution(userguess,tmpsolution)
-			if checktuple[0]:
+			if checktuple != None:
 				if ___runprod___ == True:
 					self.madeWinnerComment(comment,parent_ID,tmpsolution)
 					self.closeGame(parent_ID,1)
@@ -158,14 +169,14 @@ class MO:
 					log.info("RUN only in DEMO mode, no changes were made at the submission.")
 				
 				
-				log.info("Solution found: {} {} {} {} {}".format(parent_ID,comment.submission.title,str(checktuple[1]),str(tmpsolution),str(userguess)))
+				log.info("Solution found: {} {} \"{}/{}\" \"{}\" in {} -body \"{}\"".format(comment.author.name,comment.id,parent_ID,comment.submission.title,str(checktuple[1]),str(tmpsolution),str(userguess)))
 	
 	def checkSolution(self,userguess,solution):
 		#check if the guess of the user is includet in the solution
-		#this works very well, because booth are lists and compare word==word
-		# with for x in y you get matches you dont want
-		c = set(userguess).intersection(set(solution))
-		return bool(c),c
+		#this works very well
+		for words in solution:
+			if re.search(r'\b' + words + r'\b', userguess):
+				return bool(words),words
 		
 		
 	def updateUserFlair(self,authorname):
@@ -308,10 +319,37 @@ class MO:
 	
 	
 if __name__ == "__main__":			
-	obj = MO()
-	db= DBhelper()
-	obj.getDatabase(db)
-	obj.streamAll()
 	
+	ap = argparse.ArgumentParser(description="Post the submission ID")
+	ap.add_argument("-s" ,dest='SubmissionID',type=str, required=False,
+		help="Submission ID only xxx.py -s h4No0B")
+	argument = ap.parse_args()
+
+	if argument.SubmissionID != None:
+		log.info("Single Submission processed SID:{}".format(argument.SubmissionID))
+		singleobj = MO()
+		db = DBhelper()
+		singleobj.getDatabase(db)
+		singleobj.runSingleSubmission(argument.SubmissionID)
+		exit()
+	elif argument.SubmissionID == None:
+		log.info("Class started regular ")
+		obj = MO()
+		db = DBhelper()
+		obj.getDatabase(db)
+		obj.streamAll()
+		log.info("no arg {}".format(argument.SubmissionID))
+		None
+
+
+
+
+
+
+
+
+
+
+
 
 
