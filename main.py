@@ -201,7 +201,7 @@ class MO:
 	
 	def madeWinnerComment(self,comment,parent_ID,solution):
 		#reply that user have won
-		comment.reply("you win this round")
+		comment.reply("you win this round, go and make a new post for for us. :) ")
 		user = comment.author.name
 		#made mod submission with winner
 		submission = self.r.submission(id=parent_ID)
@@ -240,7 +240,7 @@ class MO:
 					if submission.created_utc < start_time:
 						continue
 					#regex for only do some action when picture submission is detected, i bet there is some better methode	
-					regex = r"https:\/\/i\.redd\.it|https:\/\/i\.imgur\.com"
+					regex = r"https:\/\/i\.redd\.it|https:\/\/i\.imgur\.com|https:\/\/v\.redd\.it"
 					if re.search(regex, submission.url, re.MULTILINE):
 						log.info("IMAGE found")	
 						
