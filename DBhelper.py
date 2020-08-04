@@ -105,7 +105,15 @@ class DBhelper:
 		self.c.execute("UPDATE Games SET solution = ? WHERE rID = ?",(solution,permalink))
 		self.database.commit()	
 			
-			
+	def getHintcount(self,rid):
+		self.c.execute("Select hintcount,solution from Games WHERE rID = ?",(rid,))
+		self.database.commit()
+		result = self.c.fetchall()
+		return result
+
+	def updateHintcount(self,rid):
+		self.c.execute("UPDATE Games SET hintcount = hintcount + 1 WHERE rID = ?",(rid,))
+		self.database.commit()				
 			
 			
 			

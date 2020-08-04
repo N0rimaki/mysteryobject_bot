@@ -36,7 +36,7 @@ if ___debug___ == True:
 class MO:
 	
 	def __init__(self):
-		self.subredditname = 'mysteryobject'
+		self.subredditname = 'fuckzhu'
 		_UA = 'MOB by /u/[yourouija]'
 		try:
 			reddit = praw.Reddit("bot1",user_agent=_UA)
@@ -85,43 +85,6 @@ class MO:
 		log.info("Game started  {} {} {} {}".format(submission.author.name,submission.id,submission.title,str(solution)))	
 		None
 
-
-	def processCommentSingleWord(self,comment):
-		#Here we analyze the comment and compare user comment with databasesolution
-		parent_ID = comment.parent_id.replace('t3_','')
-		
-		ss = self.getDatabase(db.getSolutionforID(parent_ID))
-		
-		for s in ss:
-			solution = str(s[0])
-			tmpsolution = solution.lower()
-			
-			try:
-				tmpsolution = ast.literal_eval(tmpsolution)
-				tmpsolution = [n.strip() for n in tmpsolution]
-			except Exception as err:
-				log.error("string to list: {}".format(str(err)))			
-			
-			userguess = re.sub(r"[^A-Za-z0-9ÄäÖöÜü$€¥£¢₧ƒ\- ]","",comment.body.lower().strip())
-
-			log.info("User: {} try {} = {} on {}".format(comment.author.name,userguess,tmpsolution,parent_ID))
-
-			if [s for s in tmpsolution if s in userguess]:
-
-			#if comment.body.lower()  in tmpsolution:
-				if ___runprod___ == True:	
-					self.madeWinnerComment(comment,parent_ID,tmpsolution)
-					self.closeGame(parent_ID,1)
-					self.getDatabase(db.updateStatus(parent_ID,1))
-					self.getDatabase(db.addWinner(comment.author.name,comment.submission.permalink,comment.submission.title))
-					self.updateUserFlair(comment.author.name)
-					self.updateLeaderboard()
-				else:
-					log.info("RUN only in DEMO mode, no changes were made at the submission.")
-				
-				
-				log.info("Solution found: {} {} {}".format(parent_ID,comment.submission.title,comment.body))
-	
 	
 	def runSingleSubmission(self,parent_ID):
 		submission = self.r.submission(id=parent_ID)
@@ -135,41 +98,61 @@ class MO:
 	
 	
 	def processCommentMutlipleWords(self,comment):
+		start_time = time.time()
+		start_time = start_time+(24*60*60)
 		#Here we analyze the comment and compare user comment with databasesolution
-		parent_ID = comment.parent_id.replace('t3_','')
+		#parent_ID = comment.parent_id.replace('t3_','')
+		parent_ID = comment.submission.id.replace('t3_','')
 		
 		ss = self.getDatabase(db.getSolutionforID(parent_ID))
 		
-		for s in ss:
-			solution = str(s[0])
-			tmpsolution = solution.lower()
-			
+		userguess = re.sub(r"[^A-Za-z0-9ÄäÖöÜü$€¥£¢₧\! -]","",comment.body.lower().strip())
+		
+		if userguess == "!hint":
 			try:
-				tmpsolution = ast.literal_eval(tmpsolution)
-				tmpsolution = [n.strip() for n in tmpsolution]
+				self.getDatabase(db.updateHintcount(parent_ID))
+				hinttmp = self.getDatabase(db.getHintcount(parent_ID))[0]
+				hintcounter = int(hinttmp[0])
+				
+				log.info("User want hints for {} - counter:{}".format(parent_ID,hintcounter))
+				
+				if hintcounter >= 5:#and if comment.created_utc > start_time
+					log.info("User becomes hint for {}".format(ss))
+					self.postHint(parent_ID,ss)
 			except Exception as err:
-				log.error("string to list: {}".format(str(err)))			
+				log.error("hintcounter {}".format(str(err)))		
 			
-			userguess = re.sub(r"[^A-Za-z0-9ÄäÖöÜü$€¥£¢₧\- ]","",comment.body.lower().strip())
-			
-			prettytime = datetime.utcfromtimestamp(comment.created_utc).strftime('%Y-%m-%d %H:%M:%S')
-			log.info("User: {} at {} try \"{}\" = {} on \"{}/{}\"".format(comment.author.name,prettytime,userguess,tmpsolution,parent_ID,comment.submission.title))
+		else:
+			for s in ss:
+				solution = str(s[0])
+				tmpsolution = solution.lower()
+				
+				try:
+					tmpsolution = ast.literal_eval(tmpsolution)
+					tmpsolution = [n.strip() for n in tmpsolution]
+				except Exception as err:
+					log.error("string to list: {}".format(str(err)))			
+				
 
-			#for solutionword in tmpsolution:
-			checktuple = self.checkSolution(userguess,tmpsolution)
-			if checktuple != None:
-				if ___runprod___ == True:
-					self.madeWinnerComment(comment,parent_ID,tmpsolution)
-					self.closeGame(parent_ID,1)
-					self.getDatabase(db.updateStatus(parent_ID,1))
-					self.getDatabase(db.addWinner(comment.author.name,comment.submission.permalink,comment.submission.title))
-					self.updateUserFlair(comment.author.name)
-					self.updateLeaderboard()
-				else:
-					log.info("RUN only in DEMO mode, no changes were made at the submission.")
 				
-				
-				log.info("Solution found: {} {} \"{}/{}\" \"{}\" in {} -body \"{}\"".format(comment.author.name,comment.id,parent_ID,comment.submission.title,str(checktuple[1]),str(tmpsolution),str(userguess)))
+				prettytime = datetime.utcfromtimestamp(comment.created_utc).strftime('%Y-%m-%d %H:%M:%S')
+				log.info("User: {} at {} try \"{}\" = {} on \"{}/{}\"".format(comment.author.name,prettytime,userguess,tmpsolution,parent_ID,comment.submission.title))
+
+				#for solutionword in tmpsolution:
+				checktuple = self.checkSolution(userguess,tmpsolution)
+				if checktuple != None:
+					if ___runprod___ == True:
+						self.madeWinnerComment(comment,parent_ID,tmpsolution)
+						self.closeGame(parent_ID,1)
+						self.getDatabase(db.updateStatus(parent_ID,1))
+						self.getDatabase(db.addWinner(comment.author.name,comment.submission.permalink,comment.submission.title))
+						self.updateUserFlair(comment.author.name)
+						self.updateLeaderboard()
+					else:
+						log.info("RUN only in DEMO mode, no changes were made at the submission.")
+					
+					
+					log.info("Solution found: {} {} \"{}/{}\" \"{}\" in {} -body \"{}\"".format(comment.author.name,comment.id,parent_ID,comment.submission.title,str(checktuple[1]),str(tmpsolution),str(userguess)))
 	
 	def checkSolution(self,userguess,solution):
 		#check if the guess of the user is includet in the solution
@@ -199,6 +182,37 @@ class MO:
 			log.info("Userflair changed {} {}".format(authorname,flairtext))
 			None
 	
+	
+	def postHint(self,parent_ID,solution):
+		regex = re.compile(r"(?<!^)[^\s](?!$)")
+		tmpStarString=""
+		for s in solution:
+			solution = str(s[0])
+			tmpsolution = solution.lower()
+			
+			try:
+				tmpsolution = ast.literal_eval(tmpsolution)
+				tmpsolution = [n.strip() for n in tmpsolution]
+			except Exception as err:
+				log.error("string to list: {}".format(str(err)))	
+				
+			for words in tmpsolution:
+
+				tmp = re.sub(regex,'_',words)
+				tmpStarString += tmp+", "
+			
+			log.info("-------------------------------------------------------{}".format(tmpStarString))	
+		
+		submission = self.r.submission(id=parent_ID)
+		modcommentid = submission.reply("Hint: "+str(tmpStarString))
+		#made mod comment sticky 
+		comment = self.r.comment(modcommentid)
+		comment.mod.distinguish(how="yes", sticky=True)		
+		log.info("Bot made hint comment {}".format(parent_ID))	
+		None
+	
+	
+	
 	def madeWinnerComment(self,comment,parent_ID,solution):
 		#reply that user have won
 		comment.reply("you win this round, go and make a new post for for us. :) ")
@@ -216,7 +230,7 @@ class MO:
 	def streamAll(self):
 	
 		start_time = time.time()
-		start_time = start_time-300
+		start_time = start_time-900
 		log.info("Getting Posts not older than {}".format(str(time.ctime(start_time))))
 		
 		
@@ -225,12 +239,11 @@ class MO:
 		while True:
 			try:
 				for comment in comment_stream:
-					
 					if comment is None:
 						break
 					if comment.created_utc < start_time:
 						continue
-					if comment.author.name != 'AutoModerator':	
+					if comment.author.name != 'AutoModerator' and comment.author.name != 'yourouija':	
 						#if some comment is found, it enter here the processing of the comment
 						self.processCommentMutlipleWords(comment)
 					
