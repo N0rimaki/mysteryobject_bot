@@ -1,0 +1,26 @@
+[1mdiff --git a/MOB.sqlite b/MOB.sqlite[m
+[1mdeleted file mode 100644[m
+[1mindex 8af4deb..0000000[m
+Binary files a/MOB.sqlite and /dev/null differ
+[1mdiff --git a/main.py b/main.py[m
+[1mindex e21e6cb..ed6fe4b 100644[m
+[1m--- a/main.py[m
+[1m+++ b/main.py[m
+[36m@@ -201,7 +201,7 @@[m [mclass MO:[m
+ 	[m
+ 	def madeWinnerComment(self,comment,parent_ID,solution):[m
+ 		#reply that user have won[m
+[31m-		comment.reply("you win this round")[m
+[32m+[m		[32mcomment.reply("you win this round, go and make a new post for for us. :) ")[m
+ 		user = comment.author.name[m
+ 		#made mod submission with winner[m
+ 		submission = self.r.submission(id=parent_ID)[m
+[36m@@ -240,7 +240,7 @@[m [mclass MO:[m
+ 					if submission.created_utc < start_time:[m
+ 						continue[m
+ 					#regex for only do some action when picture submission is detected, i bet there is some better methode	[m
+[31m-					regex = r"https:\/\/i\.redd\.it|https:\/\/i\.imgur\.com"[m
+[32m+[m					[32mregex = r"https:\/\/i\.redd\.it|https:\/\/i\.imgur\.com|https:\/\/v\.redd\.it"[m
+ 					if re.search(regex, submission.url, re.MULTILINE):[m
+ 						log.info("IMAGE found")	[m
+ 						[m

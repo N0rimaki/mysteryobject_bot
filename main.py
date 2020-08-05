@@ -36,7 +36,7 @@ if ___debug___ == True:
 class MO:
 	
 	def __init__(self):
-		self.subredditname = 'fuckzhu'
+		self.subredditname = 'mysteryobject'
 		_UA = 'MOB by /u/[yourouija]'
 		try:
 			reddit = praw.Reddit("bot1",user_agent=_UA)
@@ -50,7 +50,7 @@ class MO:
 		self.flair_running = "7ae507b2-c926-11ea-8bf8-0ef44622e4b7"
 		self.flair_onhold = "4aecca10-c99c-11ea-bc5c-0e190f721893"
 		
-		log.info("Starting the Bot Class, omg i'm nervous")	
+		log.info("Starting the Bot Class, omg i'm nervous! Starting in sub r/{}".format(self.subredditname))	
 		None
 	
 	
@@ -198,7 +198,7 @@ class MO:
 				
 			for words in tmpsolution:
 
-				tmp = re.sub(regex,'_',words)
+				tmp = re.sub(regex,'.',words)
 				tmpStarString += tmp+", "
 			
 			log.info("-------------------------------------------------------{}".format(tmpStarString))	
@@ -230,7 +230,7 @@ class MO:
 	def streamAll(self):
 	
 		start_time = time.time()
-		start_time = start_time-900
+		start_time = start_time-300
 		log.info("Getting Posts not older than {}".format(str(time.ctime(start_time))))
 		
 		
@@ -253,7 +253,7 @@ class MO:
 					if submission.created_utc < start_time:
 						continue
 					#regex for only do some action when picture submission is detected, i bet there is some better methode	
-					regex = r"https:\/\/i\.redd\.it|https:\/\/i\.imgur\.com|https:\/\/v\.redd\.it"
+					regex = r"https:\/\/i\.redd\.it|https:\/\/i\.imgur\.com|https:\/\/v\.redd\.it|https:\/\/.imgur\.com"
 					if re.search(regex, submission.url, re.MULTILINE):
 						log.info("IMAGE found")	
 						
