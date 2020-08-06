@@ -91,9 +91,10 @@ class MO:
 		submission.comment_sort = "old"
 
 		for comment in submission.comments:
-			prettytime = datetime.utcfromtimestamp(comment.created_utc).strftime('%Y-%m-%d %H:%M:%S')
-			log.info("Run Single Submission SID:{} CID:{} - userguess: {} - created_utc: {}".format(parent_ID,comment.id,comment.body,prettytime))
-			self.processCommentMutlipleWords(comment)
+			if comment.author.name != 'AutoModerator' and comment.author.name != 'yourouija':
+				prettytime = datetime.utcfromtimestamp(comment.created_utc).strftime('%Y-%m-%d %H:%M:%S')
+				log.info("Run Single Submission SID:{} CID:{} - userguess: {} - created_utc: {}".format(parent_ID,comment.id,comment.body,prettytime))
+				self.processCommentMutlipleWords(comment)
 	
 	
 	
@@ -120,8 +121,21 @@ class MO:
 					log.info("User becomes hint for {}".format(ss))
 					self.postHint(parent_ID,ss)
 			except Exception as err:
-				log.error("hintcounter {}".format(str(err)))		
-			
+				log.error("hintcounter {}".format(str(err)))	
+	
+		elif userguess == "!rescan":
+			log.info("User {} want rescan for {}".format(comment.author.name,parent_ID))			
+			self.runSingleSubmission(parent_ID)	
+			comment.reply("_sigh_ okidoki, maybe i forgot to scan some comment. i will do a rescan now.")	
+		
+		elif userguess == "!import" and comment.author.name == "wontfixit":
+			log.info("submission {} reimport".format(parent_ID))			
+			#here we monitor for new submissions
+			self.getDatabase(db.addNewGame(comment.submission))	
+			#self.initialComment(submission.id)
+			self.updateUserFlair(comment.submission.author.name)
+			comment.reply("_sigh_")	
+		
 		else:
 			for s in ss:
 				solution = str(s[0])
@@ -204,7 +218,7 @@ class MO:
 			log.info("-------------------------------------------------------{}".format(tmpStarString))	
 		
 		submission = self.r.submission(id=parent_ID)
-		modcommentid = submission.reply("Hint: "+str(tmpStarString))
+		modcommentid = submission.reply("Hint: >!"+str(tmpStarString)+"!<")
 		#made mod comment sticky 
 		comment = self.r.comment(modcommentid)
 		comment.mod.distinguish(how="yes", sticky=True)		
@@ -215,7 +229,7 @@ class MO:
 	
 	def madeWinnerComment(self,comment,parent_ID,solution):
 		#reply that user have won
-		comment.reply("you win this round, go and make a new post for for us. :) ")
+		comment.reply("you win this round, go and make a new post for us. :) ")
 		user = comment.author.name
 		#made mod submission with winner
 		submission = self.r.submission(id=parent_ID)
@@ -253,7 +267,7 @@ class MO:
 					if submission.created_utc < start_time:
 						continue
 					#regex for only do some action when picture submission is detected, i bet there is some better methode	
-					regex = r"https:\/\/i\.redd\.it|https:\/\/i\.imgur\.com|https:\/\/v\.redd\.it|https:\/\/.imgur\.com"
+					regex = r"https:\/\/i\.redd\.it|https:\/\/i\.imgur\.com|https:\/\/v\.redd\.it|https:\/\/imgur\.com"
 					if re.search(regex, submission.url, re.MULTILINE):
 						log.info("IMAGE found")	
 						
