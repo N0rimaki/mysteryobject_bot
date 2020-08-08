@@ -77,7 +77,8 @@ class DBhelper:
 		
 	
 	def getSolutionforID(self,rid):
-		self.c.execute("Select solution from Games where rID = ? and status = 0",(rid,))
+		#self.c.execute("Select solution from Games where rID = ? and status = 0",(rid,))
+		self.c.execute("Select solution from Games where rID = ?",(rid,))
 		self.database.commit()
 		result = self.c.fetchall()
 		return result
@@ -106,7 +107,7 @@ class DBhelper:
 		self.database.commit()	
 			
 	def getHintcount(self,rid):
-		self.c.execute("Select hintcount,solution from Games WHERE rID = ?",(rid,))
+		self.c.execute("Select hintcount,solution,status from Games WHERE rID = ?",(rid,))
 		self.database.commit()
 		result = self.c.fetchall()
 		return result

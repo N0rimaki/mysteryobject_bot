@@ -109,21 +109,25 @@ class MO:
 		
 		userguess = re.sub(r"[^A-Za-z0-9ÄäÖöÜü$€¥£¢₧\! -]","",comment.body.lower().strip())
 		
+
+
 		if userguess == "!hint":
 			try:
 				self.getDatabase(db.updateHintcount(parent_ID))
 				hinttmp = self.getDatabase(db.getHintcount(parent_ID))[0]
 				hintcounter = int(hinttmp[0])
-				
+				gamestatus = int(hinttmp[2])				
+
 				log.info("User want hints for {} - counter:{}".format(parent_ID,hintcounter))
 				
-				if hintcounter >= 5:#and if comment.created_utc > start_time
+				if hintcounter >= 5 and gamestatus != 2:#and if comment.created_utc > start_time
 					log.info("User becomes hint for {}".format(ss))
 					self.postHint(parent_ID,ss)
+					self.getDatabase(db.updateStatus(parent_ID,"2"))
 			except Exception as err:
 				log.error("hintcounter {}".format(str(err)))	
 	
-		elif userguess == "!rescan":
+		elif userguess == "!rescanoff":
 			log.info("User {} want rescan for {}".format(comment.author.name,parent_ID))			
 			self.runSingleSubmission(parent_ID)	
 			comment.reply("_sigh_ okidoki, maybe i forgot to scan some comment. i will do a rescan now.")	
@@ -245,6 +249,7 @@ class MO:
 	
 		start_time = time.time()
 		start_time = start_time-300
+
 		log.info("Getting Posts not older than {}".format(str(time.ctime(start_time))))
 		
 		
