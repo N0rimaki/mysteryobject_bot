@@ -45,9 +45,11 @@ class MM:
 	
 	def processMessage(self,message):
 		try:
-			userguess = re.sub(r"[^A-Za-z0-9ÄäÖöÜü$€¥£¢₧ƒ\-, ]","",message.body.lower().strip())
+			userguess = re.sub(r"[^A-Za-z0-9ÄäÖöÜü$€¥£¢₧ƒ\- ,]","",message.body.lower().strip())
+			
 			my_list = userguess.split(",")
 			self.getDatabase(db.updateSolution(message.subject,str(my_list)))
+			self.getDatabase(db.updateTimestamp_start(message.subject))
 			message.mark_read()
 			MO.startGame(self,message,my_list)		
 		except Exception as err:

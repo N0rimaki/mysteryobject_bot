@@ -49,6 +49,7 @@ class MO:
 		self.flair_solved = "882c5aa6-c926-11ea-a888-0e38155ddc41"
 		self.flair_running = "7ae507b2-c926-11ea-8bf8-0ef44622e4b7"
 		self.flair_onhold = "4aecca10-c99c-11ea-bc5c-0e190f721893"
+		self.selfcall = False
 		
 		log.info("Starting the Bot Class, omg i'm nervous! Starting in sub r/{}".format(self.subredditname))	
 		None
@@ -69,6 +70,8 @@ class MO:
 				
 		#LockThread
 		submission.mod.lock()
+		#add timestamp of solving
+		self.getDatabase(db.updateTimestamp_stop(rid))
 		#comment winner comment, done in main_messages.py
 		log.info("Game closed {} {} {}".format(submission.author.name,submission.id, submission.title))	
 
@@ -95,6 +98,7 @@ class MO:
 				prettytime = datetime.utcfromtimestamp(comment.created_utc).strftime('%Y-%m-%d %H:%M:%S')
 				log.info("Run Single Submission SID:{} CID:{} - userguess: {} - created_utc: {}".format(parent_ID,comment.id,comment.body,prettytime))
 				self.processCommentMutlipleWords(comment)
+		#self.selfcall = False
 	
 	
 	
@@ -121,18 +125,22 @@ class MO:
 				log.info("User want hints for {} - counter:{}".format(parent_ID,hintcounter))
 				
 				if hintcounter >= 5 and gamestatus != 2:#and if comment.created_utc > start_time
+
 					log.info("User becomes hint for {}".format(ss))
 					self.postHint(parent_ID,ss)
 					self.getDatabase(db.updateStatus(parent_ID,"2"))
 			except Exception as err:
 				log.error("hintcounter {}".format(str(err)))	
 	
-		elif userguess == "!rescanoff":
+		elif userguess == "!rescanoff" and self.selfcall == False:
+
 			log.info("User {} want rescan for {}".format(comment.author.name,parent_ID))			
 			self.runSingleSubmission(parent_ID)	
+			#self.selfcall = True
 			comment.reply("_sigh_ okidoki, maybe i forgot to scan some comment. i will do a rescan now.")	
 		
 		elif userguess == "!import" and comment.author.name == "wontfixit":
+
 			log.info("submission {} reimport".format(parent_ID))			
 			#here we monitor for new submissions
 			self.getDatabase(db.addNewGame(comment.submission))	
@@ -152,7 +160,7 @@ class MO:
 					log.error("string to list: {}".format(str(err)))			
 				
 
-				
+				self.getRuntime(parent_ID)
 				prettytime = datetime.utcfromtimestamp(comment.created_utc).strftime('%Y-%m-%d %H:%M:%S')
 				log.info("User: {} at {} try \"{}\" = {} on \"{}/{}\"".format(comment.author.name,prettytime,userguess,tmpsolution,parent_ID,comment.submission.title))
 
@@ -160,10 +168,11 @@ class MO:
 				checktuple = self.checkSolution(userguess,tmpsolution)
 				if checktuple != None:
 					if ___runprod___ == True:
+						self.closeGame(parent_ID,1)						
 						self.madeWinnerComment(comment,parent_ID,tmpsolution)
-						self.closeGame(parent_ID,1)
+
 						self.getDatabase(db.updateStatus(parent_ID,1))
-						self.getDatabase(db.addWinner(comment.author.name,comment.submission.permalink,comment.submission.title))
+						self.getDatabase(db.addWinner(comment.author.name,comment.permalink,comment.submission.title))
 						self.updateUserFlair(comment.author.name)
 						self.updateLeaderboard()
 					else:
@@ -202,7 +211,8 @@ class MO:
 	
 	
 	def postHint(self,parent_ID,solution):
-		regex = re.compile(r"(?<!^)[^\s](?!$)")
+		#regex = re.compile(r"(?<!^)[^\s](?!$)")
+		regex = re.compile(r"(?<!^)[^\s]")
 		tmpStarString=""
 		for s in solution:
 			solution = str(s[0])
@@ -216,10 +226,10 @@ class MO:
 				
 			for words in tmpsolution:
 
-				tmp = re.sub(regex,'.',words)
-				tmpStarString += tmp+", "
+				tmp = re.sub(regex,' \_ ',words)
+				tmpStarString += tmp+ ", "
 			
-			log.info("-------------------------------------------------------{}".format(tmpStarString))	
+			log.info("---{}".format(tmpStarString))	
 		
 		submission = self.r.submission(id=parent_ID)
 		modcommentid = submission.reply("Hint: >!"+str(tmpStarString)+"!<")
@@ -229,15 +239,33 @@ class MO:
 		log.info("Bot made hint comment {}".format(parent_ID))	
 		None
 	
+	def getRuntime(self,parent_ID):
+		timestamps = self.getDatabase(db.getTimestamps(parent_ID))
+
+		for ts in timestamps:
+			timestamp_start = int(ts[0])
+			timestamp_stop = int(ts[1])
+#		runtime = timestamp_stop-timestamp_start
+
+		d = divmod(timestamp_stop-timestamp_start,86400)  # days
+		h = divmod(d[1],3600)  # hours
+		m = divmod(h[1],60)  # minutes
+		s = m[1]  # seconds
+		
+		log.info("{}d {}h {}m {}s ".format(d[0],h[0],m[0],s))	
+	#	print '%d days, %d hours, %d minutes, %d seconds' % (d[0],h[0],m[0],s)
+		return "{}d {}h {}m {}s ".format(d[0],h[0],m[0],s)
 	
 	
 	def madeWinnerComment(self,comment,parent_ID,solution):
+		runtimetext = self.getRuntime(parent_ID)
+
 		#reply that user have won
 		comment.reply("you win this round, go and make a new post for us. :) ")
 		user = comment.author.name
 		#made mod submission with winner
 		submission = self.r.submission(id=parent_ID)
-		modcommentid = submission.reply("I AM THE LAW - User u/"+user+" has won the round.\n\rOPs solutions: "+str(solution))
+		modcommentid = submission.reply("I AM THE LAW - User u/"+user+" has won the round.\n\rOPs solutions: "+str(solution)+"\n\rY'all took "+runtimetext+" to solve it")
 		#made mod comment sticky 
 		comment = self.r.comment(modcommentid)
 		comment.mod.distinguish(how="yes", sticky=True)		

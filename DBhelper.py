@@ -15,6 +15,7 @@ class DBhelper:
 		
 		self.database = sqlite3.connect('mysterydb.db')
 		self.c = self.database.cursor()
+		self.timestamp = datetime.utcnow().timestamp()
 		self.created_at = str(datetime.now().strftime('%Y-%m-%d_%H:%M:%S'))
 		return None
 
@@ -73,12 +74,26 @@ class DBhelper:
 	
 		self.c.execute("UPDATE Games SET status = ? WHERE rID = ?",(status,rID))
 		self.database.commit()
-		
-		
+	
+	def updateTimestamp_start(self,rID):
+	
+		self.c.execute("UPDATE Games SET timestamp_start = ? WHERE rID = ?",(self.timestamp,rID))
+		self.database.commit()	
+
+	def updateTimestamp_stop(self,rID):
+	
+		self.c.execute("UPDATE Games SET timestamp_stop = ? WHERE rID = ?",(self.timestamp,rID))
+		self.database.commit()	
+	
+	def getTimestamps(self,rid):
+		self.c.execute("Select timestamp_start,timestamp_stop from Games where rID = ? ",(rid,))
+		self.database.commit()
+		result = self.c.fetchall()
+		return result		
 	
 	def getSolutionforID(self,rid):
-		#self.c.execute("Select solution from Games where rID = ? and status = 0",(rid,))
-		self.c.execute("Select solution from Games where rID = ?",(rid,))
+		self.c.execute("Select solution from Games where rID = ? and status in (0,2)",(rid,))
+		#self.c.execute("Select solution from Games where rID = ?",(rid,))
 		self.database.commit()
 		result = self.c.fetchall()
 		return result
