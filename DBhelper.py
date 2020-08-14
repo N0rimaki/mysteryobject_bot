@@ -9,14 +9,14 @@ import sqlite3
 from datetime import datetime
 
 
-		
+
+created_at = str(datetime.now().strftime('%Y-%m-%d_%H:%M:%S'))		
 class DBhelper:
 	def __init__(self):
 		
 		self.database = sqlite3.connect('mysterydb.db')
 		self.c = self.database.cursor()
-		self.timestamp = datetime.utcnow().timestamp()
-		self.created_at = str(datetime.now().strftime('%Y-%m-%d_%H:%M:%S'))
+		
 		return None
 
 
@@ -48,7 +48,7 @@ class DBhelper:
 		perm = "https://www.reddit.com"+submission.permalink
 		try:
 			self.c.execute('''INSERT OR IGNORE INTO Games(rID,title,permalink,status,author,created_at)
-						  VALUES(?,?,?,?,?,?)''', (submission.id,submission.title,perm,status,submission.author.name,self.created_at))
+						  VALUES(?,?,?,?,?,?)''', (submission.id,submission.title,perm,status,submission.author.name,created_at))
 			self.database.commit()
 			sqlquery = self.database.set_trace_callback(None)
 			if sqlquery == True:
@@ -62,11 +62,16 @@ class DBhelper:
 			return False
 		finally:
 			None
-		
-		
+
+
+
+	def newTime(self):	
+		now = datetime.now()
+		self.timestamp = datetime.timestamp(now)
+
 	def addWinner(self,author,permalink,title):
 		self.c.execute('''INSERT INTO statistics (author,permalink,title,created_at)
-					  VALUES(?,?,?,?)''', (author,permalink,title,self.created_at))
+					  VALUES(?,?,?,?)''', (author,permalink,title,created_at))
 		self.database.commit()
 	
 	
@@ -76,12 +81,12 @@ class DBhelper:
 		self.database.commit()
 	
 	def updateTimestamp_start(self,rID):
-	
+		self.newTime()
 		self.c.execute("UPDATE Games SET timestamp_start = ? WHERE rID = ?",(self.timestamp,rID))
 		self.database.commit()	
 
 	def updateTimestamp_stop(self,rID):
-	
+		self.newTime()
 		self.c.execute("UPDATE Games SET timestamp_stop = ? WHERE rID = ?",(self.timestamp,rID))
 		self.database.commit()	
 	
