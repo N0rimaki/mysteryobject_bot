@@ -29,7 +29,7 @@ class MM:
 	def __init__(self):
 		self.subredditname = 'mysteryobject'
 		_UA = 'MOB by /u/[yourouija]'
-		reddit = praw.Reddit("bot1",user_agent=_UA)
+		reddit = praw.Reddit("bot5",user_agent=_UA)
 		reddit.validate_on_submit=True	
 		self.r = reddit
 		
@@ -45,7 +45,7 @@ class MM:
 	
 	def processMessage(self,message):
 		try:
-			userguess = re.sub(r"[^A-Za-z0-9ÄäÖöÜü$€¥£¢₧ƒ\- ,]","",message.body.lower().strip())
+			userguess = re.sub(r"[^A-Za-z0-9ÄäÖöÜü$€¥£¢₧ƒ\- ,:/&.?]","",message.body.strip())
 			
 			my_list = userguess.split(",")
 			self.getDatabase(db.updateSolution(message.subject,str(my_list)))
@@ -78,7 +78,7 @@ class MM:
 	
 	def rebootClass(self):
 		log.error("FATAL, restart class")	
-		os.system("python messages.py")
+		os.system("python3 /home/pi/mysteryobject_bot/messages.py")
 
 
 if __name__ == "__main__":

@@ -14,7 +14,7 @@ created_at = str(datetime.now().strftime('%Y-%m-%d_%H:%M:%S'))
 class DBhelper:
 	def __init__(self):
 		
-		self.database = sqlite3.connect('mysterydb.db')
+		self.database = sqlite3.connect('/home/pi/mysteryobject_bot/mysterydb.db')
 		self.c = self.database.cursor()
 		
 		return None

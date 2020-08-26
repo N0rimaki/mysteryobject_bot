@@ -39,7 +39,7 @@ class MO:
 		self.subredditname = 'mysteryobject'
 		_UA = 'MOB by /u/[yourouija]'
 		try:
-			reddit = praw.Reddit("bot1",user_agent=_UA)
+			reddit = praw.Reddit("bot5",user_agent=_UA)
 			reddit.validate_on_submit=True	
 			self.r = reddit
 		except Exception as err:
@@ -69,7 +69,8 @@ class MO:
 			submission.flair.select(self.flair_onhold)
 				
 		#LockThread
-		submission.mod.lock()
+		#deactivated 26.08.2020
+		#submission.mod.lock()
 		#add timestamp of solving
 		self.getDatabase(db.updateTimestamp_stop(rid))
 		#comment winner comment, done in main_messages.py
@@ -111,7 +112,7 @@ class MO:
 		
 		ss = self.getDatabase(db.getSolutionforID(parent_ID))
 		
-		userguess = re.sub(r"[^A-Za-z0-9ÄäÖöÜü$€¥£¢₧\! -]","",comment.body.lower().strip())
+		userguess = re.sub(r"[^A-Za-z0-9ÄäÖöÜü$€¥£¢₧\!& -]","",comment.body.lower().strip())
 		
 
 
@@ -169,7 +170,7 @@ class MO:
 				if checktuple != None:
 					if ___runprod___ == True:
 						self.closeGame(parent_ID,1)						
-						self.madeWinnerComment(comment,parent_ID,tmpsolution)
+						self.madeWinnerComment(comment,parent_ID,solution)
 
 						self.getDatabase(db.updateStatus(parent_ID,1))
 						self.getDatabase(db.addWinner(comment.author.name,comment.permalink,comment.submission.title))
@@ -212,7 +213,7 @@ class MO:
 	
 	def postHint(self,parent_ID,solution):
 		#regex = re.compile(r"(?<!^)[^\s](?!$)")
-		regex = re.compile(r"(?<!^)[^\s]")
+		regex = re.compile(r"(?<!^)[^\s\"]")
 		tmpStarString=""
 		for s in solution:
 			solution = str(s[0])
@@ -225,11 +226,11 @@ class MO:
 				log.error("string to list: {}".format(str(err)))	
 				
 			for words in tmpsolution:
-
+				words = words.replace(" ","\"")
 				tmp = re.sub(regex,' \_ ',words)
 				tmpStarString += tmp+ ", "
 			
-			log.info("---{}".format(tmpStarString))	
+			log.info("--->{}".format(tmpStarString))	
 		
 		submission = self.r.submission(id=parent_ID)
 		modcommentid = submission.reply("Hint: >!"+str(tmpStarString)+"!<")
@@ -374,7 +375,7 @@ class MO:
 	
 	def rebootClass(self,err):
 		log.error("FATAL, restart class {}".format(str(err)))	
-		os.system("python main.py")	
+		os.system("python3 /home/pi/mysteryobject_bot/main.py")	
 	
 	
 	
