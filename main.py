@@ -170,7 +170,7 @@ class MO:
 				if checktuple != None:
 					if ___runprod___ == True:
 						self.closeGame(parent_ID,1)						
-						self.madeWinnerComment(comment,parent_ID,solution)
+						self.madeWinnerComment(comment,parent_ID,tmpsolution)
 
 						self.getDatabase(db.updateStatus(parent_ID,1))
 						self.getDatabase(db.addWinner(comment.author.name,comment.permalink,comment.submission.title))
@@ -230,7 +230,7 @@ class MO:
 				tmp = re.sub(regex,' \_ ',words)
 				tmpStarString += tmp+ ", "
 			
-			log.info("--->{}".format(tmpStarString))	
+			#log.info("--->{}".format(tmpStarString))	
 		
 		submission = self.r.submission(id=parent_ID)
 		modcommentid = submission.reply("Hint: >!"+str(tmpStarString)+"!<")
@@ -261,12 +261,23 @@ class MO:
 	def madeWinnerComment(self,comment,parent_ID,solution):
 		runtimetext = self.getRuntime(parent_ID)
 
+		sol = ""
+		i = len(solution)
+		j=1
+		for w in solution:
+			
+			if j == i:
+				sol += w
+			else:
+				sol += w+", "
+			j += 1
+
 		#reply that user have won
 		comment.reply("you win this round, go and make a new post for us. :) ")
 		user = comment.author.name
 		#made mod submission with winner
 		submission = self.r.submission(id=parent_ID)
-		modcommentid = submission.reply("I AM THE LAW - User u/"+user+" has won the round.\n\rOPs solutions: "+str(solution)+"\n\rY'all took "+runtimetext+" to solve it")
+		modcommentid = submission.reply("I AM THE LAW - User u/"+user+" has won the round.\n\rOPs solutions: * "+str(sol)+" *\n\rY'all took "+runtimetext+" to solve it")
 		#made mod comment sticky 
 		comment = self.r.comment(modcommentid)
 		comment.mod.distinguish(how="yes", sticky=True)		

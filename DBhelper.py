@@ -48,7 +48,7 @@ class DBhelper:
 		perm = "https://www.reddit.com"+submission.permalink
 		try:
 			self.c.execute('''INSERT OR IGNORE INTO Games(rID,title,permalink,status,author,created_at)
-						  VALUES(?,?,?,?,?,?)''', (submission.id,submission.title,perm,status,submission.author.name,created_at))
+						  VALUES(?,?,?,?,?,?)''', (submission.id,submission.title,perm,status,submission.author.name,submission.created_utc))
 			self.database.commit()
 			sqlquery = self.database.set_trace_callback(None)
 			if sqlquery == True:
@@ -111,7 +111,7 @@ class DBhelper:
 		return result
 
 	def getCreatedbyUser(self,authorname):
-		self.c.execute("Select count() as counter from Games where author = ?",(authorname,))
+		self.c.execute("Select count() as counter from Games where author = ? and status <> 0",(authorname,))
 		self.database.commit()
 		result = self.c.fetchall()
 		return result	

@@ -42,10 +42,15 @@ class MM:
 	def getDatabase(self,db):
 		self.db=db
 		return db
+
+	#todo answer if not allowed chars are found!
 	
 	def processMessage(self,message):
 		try:
-			userguess = re.sub(r"[^A-Za-z0-9ÄäÖöÜü$€¥£¢₧ƒ\- ,:/&.?]","",message.body.strip())
+			tmpMessage = message.body.strip()
+			tmpMessage = tmpMessage.rstrip(",")
+			tmpMessage = tmpMessage.lstrip(",")
+			userguess = re.sub(r"[^A-Za-z0-9ÄäÖöÜü$€¥£¢₧ƒ\- ,:/&.?]","",tmpMessage)
 			
 			my_list = userguess.split(",")
 			self.getDatabase(db.updateSolution(message.subject,str(my_list)))
