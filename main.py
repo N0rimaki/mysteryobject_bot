@@ -157,6 +157,9 @@ class MO:
 				try:
 					tmpsolution = ast.literal_eval(tmpsolution)
 					tmpsolution = [n.strip() for n in tmpsolution]
+
+					tmpsolution_upper = ast.literal_eval(solution)
+					tmpsolution_upper = [n.strip() for n in tmpsolution_upper]
 				except Exception as err:
 					log.error("string to list: {}".format(str(err)))			
 				
@@ -170,7 +173,7 @@ class MO:
 				if checktuple != None:
 					if ___runprod___ == True:
 						self.closeGame(parent_ID,1)						
-						self.madeWinnerComment(comment,parent_ID,tmpsolution)
+						self.madeWinnerComment(comment,parent_ID,tmpsolution_upper)
 
 						self.getDatabase(db.updateStatus(parent_ID,1))
 						self.getDatabase(db.addWinner(comment.author.name,comment.permalink,comment.submission.title))
@@ -180,7 +183,7 @@ class MO:
 						log.info("RUN only in DEMO mode, no changes were made at the submission.")
 					
 					
-					log.info("Solution found: {} {} \"{}/{}\" \"{}\" in {} -body \"{}\"".format(comment.author.name,comment.id,parent_ID,comment.submission.title,str(checktuple[1]),str(tmpsolution),str(userguess)))
+					log.info("Solution found: {} {} \"{}/{}\" \"{}\" in {} -body \"{}\"".format(comment.author.name,comment.id,parent_ID,comment.submission.title,str(checktuple[1]),str(tmpsolution_upper),str(userguess)))
 	
 	def checkSolution(self,userguess,solution):
 		#check if the guess of the user is includet in the solution
@@ -277,7 +280,7 @@ class MO:
 		user = comment.author.name
 		#made mod submission with winner
 		submission = self.r.submission(id=parent_ID)
-		modcommentid = submission.reply("I AM THE LAW - User u/"+user+" has won the round.\n\rOPs solutions: * "+str(sol)+" *\n\rY'all took "+runtimetext+" to solve it")
+		modcommentid = submission.reply("I AM THE LAW - User u/"+user+" has won the round.\n\rOPs solutions: "+str(sol)+" \n\rY'all took "+runtimetext+" to solve it")
 		#made mod comment sticky 
 		comment = self.r.comment(modcommentid)
 		comment.mod.distinguish(how="yes", sticky=True)		
